@@ -1,0 +1,176 @@
+\FloatBarrier
+\section{CUDA} 
+\label{sec:CUDAImpl}
+
+In recent years we have seen a great rise in the power of consumer graphics acceleration hardware due to the high demand for beautifully rendered modern entertainment software. Luckily, this rise in computational power is not only beneficial for video games developers, but also provide a medium for high levels of parallel execution in general algorithms.
+
+At first, the use of GPUs as general computation units required mapping input data to textures, and executing algorithms as shaders.
+This round-about way of parallelism is luckily an artefact of early work in the field, and has now been replaced by CUDA, which is short for \textbf{C}ompute \textbf{U}nified \textbf{D}evice \textbf{A}rchitecture. 
+CUDA enables programmers to write code that is highly similar to standard \texttt{C++} code, and have it executed on the GPU without having to first map their algorithms to shaders.
+
+There is a lot of ongoing research in the field GPU-assisted sorting algorithms, but there is a lack of older articles as dedicated graphics cards are a recent development. In~\citeA{GPUTeraSort} we are presented with an efficient sorting technique that focuses on the cost-effectiveness of GPU's as hardware for database systems. The parallelism of CUDA can be similar to SIMD architecture, as explored ~\citeA{FastGPU}, where different types of sorting algorithms are compared both for CPU and GPU purposes. Finally, some impressive performance gains are presented in~\citeA{OddEvenOpenCL}, though it uses some non-standard hardware.
+
+What makes CUDA so interesting is that the GPU supports a massive number of threads executing in parallel.
+Most modern graphics processors support execution hundreds of threads in parallel, as opposed to the e.g. 16 concurrent threads of a hyperthreaded octocore CPU. Additionally, the GPU will often have a much higher memory throughput, in order to support this huge amount of threads. Note that, as opposed to SIMD-parallelism, these threads can, from the view of the programmer, operate entirely independently.
+
+There are however certain drawbacks to the threading model of CUDA. Firstly, the threads themselves are not as powerful as CPU threads, as they must share a small fixed number of processing units that are themselves not nearly as powerful as a modern CPU. Also, and this is one of the most important aspect of CUDA parallelism, the CUDA threads are not actually completely independent of each other, as CPU threads would be. This inter-dependency between threads requires that threads are grouped together in so-called warps, often of size 32 or more, and any instruction must be executed in parallel at all threads sharing a warp \footnote{or half-warp, depending on architecture}. This hardware peculiarity harshly penalizes branches, as any branch where two threads in a warp may take different path must have both paths executed by all threads within the same warp.
+
+With the high number threads available, many classic synchronization constructs, notably locks and semaphores become implausible, and tend to be overly harmful to performance. To combat this problem, CUDA threads are divided into blocks of 512 or 1024 threads, whose execution can be gated, such that all threads within the same block must reach a certain point before continuing. This allows for small-scale synchronization.
+Synchronization on a larger scale is often achieved by separating the execution of the algorithm into smaller sections and utilizing the fact that CUDA function calls are executed in the order they are sent to the GPU.
+
+Data-oblivious algorithms come to mind as a solution to problem of having highly connected thread execution. Since data-oblivious algorithms do not depend on the input data, no branches are required based on the input. Sorting networks are especially suited for this, since they can naturally map each wire of the network to a single thread, and perform each comparison in a step of the network in parallel.
+
+We now move on to showing how some algorithms have been adapted to use CUDA. To simplify the description of these algorithms, we will use the notation \texttt{Parallel(N, proc)} to represent CUDA-parallel execution of \texttt{proc} on \texttt{N} threads. Additionally, any thread is supposed to be able to obtain its 0-based thread index as \texttt{idx} inside each procedure. Mostly, this skips the tedious work of setting up CUDA thread networks and culling excess threads that are not needed.
+
+The algorithms have all been implemented to work with CUDA architectures of version 1.2 and up. Despite this version of CUDA being somewhat dated, it is more than sufficient for implementing these algorithms, and it is the highest version available on the machine running most of the experiments. 
+
+\subsection{Shellsort Variants}
+
+Let us begin by looking at the Shellsort variants, as they have the simplest schemes for CUDA parallel execution.
+
+In Algorithm~\ref{alg:ParallellHShakes}, we show how to do the upwards part of a $h$-shake. This is the inner loop of Pratt's Shellsort, and half the h-shake of Shaker Sort. The downwards part of the $h$-shake for Shaker Sort follows the same idea, so we omit describing its details.
+What is interesting is the simplicity of doing a $h$-wise parallel $h$-shake. This translates naturally to the CUDA architecture, and even has aligned memory accesses for threads in the same warp.
+
+There is however the problem of performing these shakes when $h$ gets relatively small. We recommend switching to sequential execution on the CPU when $h$ falls below the maximum number of concurrent threads executing on the GPU. This proves somewhat problematic for Pratt's Shellsort, where the jump sequence is not monotonically decreasing, where we recommend switching back to CPU execution at the first element of the sequence that falls below the thread limit. 
+
+\begin{algorithm}
+\caption{Parallel H-Shakes}\label{alg:ParallellHShakes}
+\begin{algorithmic}[1]
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $n$: Size of $A$
+	\Statex $h$: \texttt{H} a.k.a. jump distance
+\Procedure{ParallelHShakeWrapperUp}{$A, n, h$}
+\State {$\mathtt{Parallel}(h, \mathtt{ParallelHShakeUp}\{A,n,h\})$}
+\EndProcedure
+
+\item[]
+
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $n$: Size of $A$
+	\Statex $h$: \texttt{H} aka. jump distance
+\Procedure{ParallelHShakeUp}{$A, n, h$}
+\State{$i \gets \mathtt{idx}$}
+\While{$i<n-h$}
+	\State{$\mathtt{Compare-Exchange}(A, i, i+h)$}
+	\State{$i \gets i + h$}
+\EndWhile
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Bitonic Sort}
+
+Bitonic Sort has the desirable property of being a classical sorting network of poly-logarithmic depth. When adapting such networks to parallel execution, one can often obtain an efficient parallel solution by mapping each input element to a separate thread, and performing all comparisons of a single layer of the algorithm in parallel. In fact, we can make do with $n/2$ threads, since by necessity, there must be two elements per comparison.
+
+For Bitonic Sort this mapping is fairly simple, as each layer of the network consists of exactly $n/2$ comparisons. Algorithm~\ref{alg:ParallelBitonic} shows how to perform a Bitonic Sort this way. It should be noted that this way of approaching Bitonic Sort is completely different to the recursive definition given in the first description of the algorithm, but the resulting sorting networks should be the identical, exception for the ordering of independent \texttt{Compare-Exchange} operations.
+
+\begin{algorithm}
+\caption{Parallel Bitonic Sort}\label{alg:ParallelBitonic}
+\begin{algorithmic}[1]
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $n$: Size of $A$
+\Procedure{ParallelBitonicSort}{$A, n$}
+\For {$s = 2, 4, 8 \dots n$} \Comment{Size of sub-problem sorts}
+	\For{$m = s, s/2, s/4 \dots 2$} \Comment{Size of sub-problem merges}
+		\State{$\mathtt{Parallel}(n/2, \mathtt{ParallelBitonicStep}\{A, s, m\})$}
+	\EndFor
+\EndFor
+\EndProcedure
+
+\item[]
+
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $s$: Sorting subproblem size
+	\Statex $m$: Merging subproblem size
+\Procedure{ParallelBitonicStep}{$A, s, m$}
+\State {$ascending \gets \mathtt{idx} \% s <\frac{s}{2}$} \Comment{Odd-numbered sub-sort or not?}
+\State{$i \gets \mathtt{idx} \% \frac{m}{2} + m \cdot \floor{\frac{\mathtt{idx}}{m/2}}$} \Comment{Position within merge}
+\If{$ascending$}
+	\State{$\mathtt{Compare-Exchange}(A, i, i+\frac{m}{2})$}
+\Else
+	\State{$\mathtt{Reverse-Compare-Exchange}(A, i, i+\frac{m}{2})$}
+\EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+A great benefit of the simplicity in mapping the threads of Bitonic Sort to their respective wires, and having them perform strictly separated comparisons even when operating in parallel, is the possibility of mapping smaller problem instances to a single CUDA thread block. This allows us to switch to shared \footnote{
+Shared memory is processor-local memory that is shared across a single thread block. It is considerably faster than the main CUDA memory.
+} memory for sorts and merges of size 1024 or lower, which cuts about a third of the running time. Appendix~\ref{app:CUDABSShared} shows the running times for CUDA-based Bitonic Sort with and without shared memory.
+
+\subsection{Odd-Even Mergesort}
+
+Odd-Even Mergesort follows the same general principle as Bitonic Sort, as they share many of the same properties, being sorting networks of low depth. It is however slightly more difficult to map the threads of the sorting network to CUDA threads in the case of Odd-Even Mergesort, as not all threads are active at all times.
+
+Instead of doing the thread mapping once again, we use the parallel Odd-Even Mergesort of~\citeA{OddEvenOpenCL}, originally developed to show off the performance of OpenCL. It does not provide the same $n/2$ upper limit on the number of threads, and as such will have a slightly higher number of threads not performing comparisons. The algorithm makes up for this by having a much simpler structure within the parallel code, which can be important, depending on the computing power available to the GPU.
+
+The algorithm, as adapted from the description in~\citeA{OddEvenOpenCL}
+\footnote{
+This version of Odd-Even Mergesort may seem strange, as the order of the comparisons does not at first seem to match a normal Odd-Even Mergesort. In fact, the version from~\citeA{OddEvenOpenCL} has been heavily reordered in order to better support a parallel execution schedule.
+}
+, can be seen in Algorithm~\ref{alg:ParallelOddEven}.
+
+\begin{algorithm}
+\caption{Parallel Odd-Even Mergesort}\label{alg:ParallelOddEven}
+\begin{algorithmic}[1]
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $n$: Size of $A$
+\Procedure{ParallelOddEvenMergesort}{$A, n$}
+\For{$p = n/2, n/4, n/8 ... 1$}
+	\State{$(d, r) \gets (p, 0)$}
+	\For{$q = n/2, n/4, n/8 ... p$}
+		\State{$\mathtt{Parallel}(n-d, \mathtt{ParallelOddEvenStep}\{A, p, r, d\})$}
+		\State{$(d, r) \gets (q-p, p)$}
+	\EndFor
+\EndFor
+\EndProcedure
+
+\item[]
+
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $p$: Subproblem size
+	\Statex $r$: Wire selector
+	\Statex $d$: Offset distance
+\Procedure{ParallelOddEvenStep}{$A, p, r, d$}
+\If{$\mathtt{idx}\&p==r$}
+	\State{$\mathtt{CompareExchange}(A,\mathtt{idx},\mathtt{idx}+d)$}
+\EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Randomized Shellsort}
+
+Finally, we get Randomized Shellsort. Randomized Shellsort seems, at first, an obvious candidate for parallel execution on the GPU, since the region comparison is essentially large series of parallel random \texttt{Compare-Exchanges}. There is however, a few catches.
+
+One problem is the lack of a parallel random shuffle. In order to execute the region comparison, one must generate a random mapping of elements in one region to another, and doing so in the parallel lock-free environment of the CUDA architecture is overly complicated, and little work has been done on the subject. Therefore, the random mapping must be generated on the CPU. This is however not as bad as it might seem, since the random mapping can be generated while the GPU is performing comparisons. Additionally, the permutation mapping can be stored as texture memory, which provides a small amount of read-only cache.
+
+Another big problem is the random access patterns of region comparisons. The memory architecture of graphics processors depend heavily on threads accessing consecutive data elements, and this cannot be guaranteed when doing Randomized Shellsort. GPU architectures have a high memory throughput that will slightly mitigate this, and, depending on the architecture, this may still be preferable to a CPU cache miss. 
+
+The parallel region comparison is shown in Algorithm~\ref{alg:ParallelRegionCompare}
+
+\begin{algorithm}
+\caption{Parallel Region Compare}\label{alg:ParallelRegionCompare}
+\begin{algorithmic}[1]
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $i$: Index of first region
+	\Statex $j$: Index of second region
+	\Statex $size$: Size of regions to compare
+\Procedure{ParallelRegionCompareWrapper}{$A, i, j, size$}
+\For{$1 \dots c$}
+	\State $matching \gets \mathtt{shuffle}([0 \dots size-1])$
+	\State{$\mathtt{Parallel}(size, \mathtt{ParallelRegionCompare}\{A, i, j, matching\})$}
+\EndFor
+\EndProcedure
+
+\item[]
+
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $i$: Index of first region
+	\Statex $j$: Index of second region
+	\Statex $matching$: Array specifying of region pairings
+\Procedure{ParallelRegionCompare}{$A, i, j, matching$}
+\State{$\mathtt{Compare-Exchange}(A, i + \mathtt{idx}, j + matching[\mathtt{idx}])$}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}

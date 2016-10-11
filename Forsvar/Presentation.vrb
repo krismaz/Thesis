@@ -1,0 +1,52 @@
+\frametitle{Shaker Sort Vectorized}
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\begin{block}{basis}
+\tiny
+\begin{verbatim}
+0: CE(0,25)
+1: CE(1,26)
+2: CE(2,27)
+3: CE(3,28)
+4: CE(4,29)
+5: CE(5,30)
+6: CE(6,31)
+7: CE(6,31)
+8: CE(5,30)
+9: CE(4,29)
+10: CE(3,28)
+11: CE(2,27)
+12: CE(1,26)
+13: CE(0,25)
+14: CE(0,15)
+15: CE(1,16)
+16: CE(2,17)
+17: CE(3,18)
+18: CE(4,19)
+19: CE(5,20)
+20: CE(6,21)
+21: CE(7,22)
+...
+\end{verbatim}
+\end{block}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{block}{vectorized}
+\tiny
+\begin{verbatim}
+0: CE4U(0, 25)
+1: CE(4, 29)
+2: CE(5, 30)
+3: CE(6, 31)
+4: CE4U(3, 28)
+5: CE(2, 27)
+6: CE(1, 26)
+7: CE(0, 25)
+8: CE4U(0, 15)
+9: CE4U(4, 19)
+...
+\end{verbatim}
+\vspace{2.5cm}
+\end{block}
+\end{column}
+\end{columns}

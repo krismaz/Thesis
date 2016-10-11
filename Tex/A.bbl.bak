@@ -1,0 +1,166 @@
+\begin{thebibliography}{10}
+
+\bibitem{AKS}
+Mikl\'{o}s Ajtai, J\'{a}nos Koml\'{o}s, and Endre Szemer{\'e}di.
+\newblock An {$O(N \log N)$} {S}orting {N}etwork.
+\newblock In {\em Proceedings of the Fifteenth Annual ACM Symposium on Theory
+  of Computing}, STOC '83, pages 1--9, 1983.
+
+\bibitem{SNApplications}
+Kenneth~E. Batcher.
+\newblock Sorting {N}etworks and {T}heir {A}pplications.
+\newblock In {\em Proceedings of the April 30--May 2, 1968, Spring Joint
+  Computer Conference}, AFIPS '68 (Spring), pages 307--314, 1968.
+
+\bibitem{SIMDSort}
+Jatin Chhugani, Anthony~D. Nguyen, Victor~W. Lee, William Macy, Mostafa Hagog,
+  Yen-Kuang Chen, Akram Baransi, Sanjeev Kumar, and Pradeep Dubey.
+\newblock Efficient {I}mplementation of {S}orting on {M}ulti-core {SIMD} {CPU}
+  {A}rchitecture.
+\newblock {\em Proc. VLDB Endow.}, 1(2):1313--1324, August 2008.
+
+\bibitem{AKSLectureNotes}
+Va{\^s}ek Chv{\'a}tal.
+\newblock {\em Lecture notes on the new {AKS} sorting network}.
+\newblock 1992.
+
+\bibitem{OMPIntro}
+Leonardo Dagum and Ramesh Menon.
+\newblock Open{MP}: {A}n {I}ndustry-{S}tandard {API} for {S}hared-{M}emory
+  {P}rogramming.
+\newblock {\em IEEE Comput. Sci. Eng.}, 5(1):46--55, January 1998.
+
+\bibitem{PeriodicSortingNetwork}
+Martin Dowd, Yehoshua Perl, Larry Rudolph, and Michael Saks.
+\newblock The {P}eriodic {B}alanced {S}orting {N}etwork.
+\newblock {\em J. ACM}, 36(4):738--757, October 1989.
+
+\bibitem{OldSIMD}
+Timothy Furtak, Jos{\'e}~Nelson Amaral, and Robert Niewiadomski.
+\newblock Using {SIMD} {R}egisters and {I}nstructions to {E}nable
+  {I}nstruction-level {P}arallelism in {S}orting {A}lgorithms.
+\newblock In {\em Proceedings of the Nineteenth Annual ACM Symposium on
+  Parallel Algorithms and Architectures}, SPAA '07, pages 348--357, 2007.
+
+\bibitem{RandShellSort}
+Michael~T. Goodrich.
+\newblock Randomized {S}hellsort: {A} {S}imple {O}blivious {S}orting
+  {A}lgorithm.
+\newblock In {\em Proceedings of the Twenty-first Annual ACM-SIAM Symposium on
+  Discrete Algorithms}, SODA '10, pages 1262--1277, 2010.
+
+\bibitem{AnnealingSort}
+Michael~T. Goodrich.
+\newblock Spin-the-{B}ottle {S}ort and {A}nnealing {S}ort: {O}blivious
+  {S}orting via {R}ound-{R}obin {R}andom {C}omparisons.
+\newblock {\em Algorithmica}, 68(4):835--858, 2014.
+
+\bibitem{ZigZag}
+Michael~T. Goodrich.
+\newblock Zig-zag {S}ort: {A} {S}imple {D}eterministic {D}ata-oblivious
+  {S}orting {A}lgorithm {R}unning in {$O(N \log N)$} {T}ime.
+\newblock In {\em Proceedings of the 46th Annual ACM Symposium on Theory of
+  Computing}, STOC '14, pages 684--693, 2014.
+
+\bibitem{GPUTeraSort}
+Naga Govindaraju, Jim Gray, Ritesh Kumar, and Dinesh Manocha.
+\newblock {GPUT}era{S}ort: {H}igh {P}erformance {G}raphics {C}o-processor
+  {S}orting for {L}arge {D}atabase {M}anagement.
+\newblock In {\em Proceedings of the 2006 ACM SIGMOD International Conference
+  on Management of Data}, SIGMOD '06, pages 325--336, 2006.
+
+\bibitem{ShakerSort}
+Janet Incerpi and Robert Sedgewick.
+\newblock Practical {V}ariations of {S}hellsort.
+\newblock {\em Inf. Process. Lett.}, 26(1):37--43, September 1987.
+
+\bibitem{VectorizingFortran}
+David Levine, David Callahan, and Jack Dongarra.
+\newblock Paper: A comparative study of automatic vectorizing compilers.
+\newblock {\em Parallel Comput.}, 17(10-11):1223--1244, December 1991.
+
+\bibitem{VectorizationEvaluation}
+Saeed Maleki, Yaoqing Gao, Maria~J. Garzar\'{a}n, Tommy Wong, and David~A.
+  Padua.
+\newblock An evaluation of vectorizing compilers.
+\newblock In {\em Proceedings of the 2011 International Conference on Parallel
+  Architectures and Compilation Techniques}, PACT '11, pages 372--382, 2011.
+
+\bibitem{PairwiseSorting}
+Ian Parberry.
+\newblock The {P}airwise {S}orting {N}etwork.
+\newblock {\em Parallel Processing Letters}, 2(02n03):205--211, 1992.
+
+\bibitem{kSorters}
+Bruce Parker and Ian Parberry.
+\newblock Constructing sorting networks from k-sorters.
+\newblock {\em Information Processing Letters}, 33(3):157--162, 1989.
+
+\bibitem{Paterson}
+Mike~S. Paterson.
+\newblock Improved sorting networks witho(logn) depth.
+\newblock {\em Algorithmica}, 5(1-4):75--92, 1990.
+
+\bibitem{PrattThesis}
+Vaughan~Ronald Pratt.
+\newblock {\em Shellsort and {S}orting {N}etworks}.
+\newblock PhD thesis, Stanford University, 1972.
+\newblock AAI7216773.
+
+\bibitem{FastGPU}
+Nadathur Satish, Changkyu Kim, Jatin Chhugani, Anthony~D. Nguyen, Victor~W.
+  Lee, Daehyun Kim, and Pradeep Dubey.
+\newblock Fast {S}ort on {CPU}s and {GPU}s: {A} {C}ase for {B}andwidth
+  {O}blivious {SIMD} {S}ort.
+\newblock In {\em Proceedings of the 2010 ACM SIGMOD International Conference
+  on Management of Data}, SIGMOD '10, pages 351--362, 2010.
+
+\bibitem{SNSimplified}
+Joel Seiferas.
+\newblock Sorting {N}etworks of {L}ogarithmic {D}epth, {F}urther {S}implified.
+\newblock {\em Algorithmica}, 53(3):374--384, February 2009.
+
+\bibitem{Shellsort}
+Donald~L. Shell.
+\newblock A {H}igh-speed {S}orting {P}rocedure.
+\newblock {\em Commun. ACM}, 2(7):30--32, jul 1959.
+
+\bibitem{OMPCache}
+Nils Smeds.
+\newblock Open{MP} {A}pplication {T}uning {U}sing {H}ardware {P}erformance
+  {C}ounters.
+\newblock In {\em Proceedings of the OpenMP Applications and Tools 2003
+  International Conference on OpenMP Shared Memory Parallel Programming},
+  WOMPAT'03, pages 260--270, 2003.
+
+\bibitem{VectorizingMMX}
+N.~Sreraman and R.~Govindarajan.
+\newblock A vectorizing compiler for multimedia extensions.
+\newblock {\em Int. J. Parallel Program.}, 28(4):363--400, August 2000.
+
+\bibitem{DivideSortMerge}
+David~C. Van~Voorhis.
+\newblock A {G}eneralization of the {D}ivide-sort-merge {S}trategy for
+  {S}orting {N}etworks.
+\newblock Technical report, 1971.
+
+\bibitem{BadShaker}
+Mark~A. Weiss and Robert Sedgewick.
+\newblock Bad {C}ases for {S}haker-sort.
+\newblock {\em Inf. Process. Lett.}, 28(3):133--136, July 1988.
+
+\bibitem{NewSIMD}
+Tian Xiaochen, Kamil Rocki, and Reiji Suda.
+\newblock Register {L}evel {S}ort {A}lgorithm on {M}ulti-core {SIMD}
+  {P}rocessors.
+\newblock In {\em Proceedings of the 3rd Workshop on Irregular Applications:
+  Architectures and Algorithms}, $IA^3$ '13, pages 9:1--9:8, 2013.
+
+\bibitem{OddEvenOpenCL}
+Keliang Zhang, Jiajia Li, Gang Chen, and Baifeng Wu.
+\newblock Gpu {A}ccelerate {P}arallel {O}dd-even {M}erge {S}ort: An {O}pen{CL}
+  {M}ethod.
+\newblock In {\em Computer Supported Cooperative Work in Design (CSCWD), 2011
+  15th International Conference on}, pages 76--83. IEEE, 2011.
+
+\end{thebibliography}

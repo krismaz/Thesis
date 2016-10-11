@@ -1,0 +1,20 @@
+\section{Konklusioner}
+
+\begin{frame}
+			\begin{itemize}
+				\item De nye algoritmer er smarte, men fungerer dårligt i praksis
+				\item Ikke meget at gøre ved det
+				\item Men! Nye teknikker gør de gamle algorithmer hurtige
+			\end{itemize}
+			\begin{tabular}{|l|c c c c|}
+\showrowcolors
+\hline
+& Base & SIMD & CUDA & OpenMP  \\ \hline
+Randomized Shellsort & 22.6 & 20.2 & \textbf{20.1} & 21.5\\ 
+Bitonic Sort & 6.41 & 2.02 & \textbf{1.80} & 5.61\\ 
+Odd-Even Mergesort & 8.15 & 7.60 & \textbf{2.76} & 7.02\\ 
+Pratt's Shellsort & 8.82  & 4.50 & \textbf{4.11} & 5.85 \\ 
+Shaker Sort & 3.48 & \textbf{1.75} & 2.46 & 2.65\\ 
+Annealing Sort & \textbf{67.3} & - & - & - \\ \hline
+\end{tabular}
+\end{frame}

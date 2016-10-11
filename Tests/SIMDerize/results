@@ -1,0 +1,23 @@
+\begin{table}[!ht]
+\begin{tabular}{|l|c|c|c|c|}
+Algorithm & Sequential & Aligned & Unaligned & Shuffled \\
+\hline
+RShellSortPure & 215048 & 213758 & 213617 & 72182\\
+\hline
+OddEvenMergeSort & 139263 & 139263 & 139263 & 57954\\
+\hline
+BitonicSort & 159744 & 75264 & 75264 & 56835\\
+\hline
+OddEvenMergeSortCUDA & 139263 & 67074 & 67074 & 34818\\
+\hline
+BitonicSortCUDA & 159744 & 75264 & 75264 & 39936\\
+\hline
+Pratt & 183634 & 87889 & 55138 & 55114\\
+\hline
+ShakerSort & 125348 & 121730 & 55934 & 55934\\
+\hline
+AnnealingSortPure & 524160 & 524160 & 524160 & 524160\\
+\hline
+\end{tabular}
+\end{table}
+ALL DONES!

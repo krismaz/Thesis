@@ -1,0 +1,96 @@
+\FloatBarrier
+\section{SIMD for Sorting Networks}
+\label{sec:SIMDImpl}
+
+When algorithms are designed to operate independently of the contents of their input data, which is exactly the case for data-oblivious algorithms, they have a great potential for a high amount of parallelism.
+
+One scheme for parallel execution of algorithm that has seen rapid development in recent years is SIMD. SIMD, meaning \textbf{S}ingle \textbf{I}nstruction \textbf{M}ultiple \textbf{D}ata, refers to the ability of modern architectures to perform identical operations on multiple data elements at once. Properly exploiting this ability to perform simultaneous operations can provide great performance gains.
+
+One of the most widely available SIMD framework is the SSE instruction set, which is found in many modern consumer CPUs. Using SSE, one can perform many operations on up to 128 bits of data at once, which will in most practical applications will be four 32-bit elements of data. 
+In~\citeA{SIMDSort}, SIMD is shown to greatly improve sorting performance by using SSE instructions to speed up the merging operation of a multi-threaded variant of merge sort, and~\citeA{OldSIMD} present an interesting approach to automatically apply generate SIMD instruction sequences for use in sorting networks. 
+\citeA{NewSIMD} provides a positive result in applying SIMD along with multi-core processing, but this involves using hardware specialized for highly compute-intensive environments.
+
+In the field of sorting networks, the main operations to consider are \texttt{PMINSD} and \texttt{PMAXSD}, short for \textbf{P}acked \textbf{MIN}inimun/\textbf{MAX}inimun of \textbf{S}igned \textbf{D}ouble-word integers, which are available from SSE4.1 and onwards.
+Using these two operations it is possible to perform four \texttt{Compare-Exchange} operations at once, but only if the eight input positions are distinct.
+Applying the 128-bit \texttt{PMINSD} on a set of 4 integers is equivalent to the following;
+
+\begin{equation}
+\begin{multlined}
+\mathtt{PMINSD}\{(a_1, a_2, a_3, a_4), (b_1, b_2, b_3, b_4)\}\\
+	\shoveleft[2cm]{\Rightarrow (\min\{a_1, b_1\}, \min\{a_2, b_2\}, \min\{a_3, b_3\}, \min\{a_4, b_4\})}
+\end{multlined}
+\end{equation}
+
+
+The main drawback of using the SSE instruction set is moving data to and from the SSE registers. If the input positions we are working on are spread out in memory, we need to load them one element at a time, which often makes the performance gained from doing four parallel comparisons negligible. If however, we need to perform a series of \texttt{Compare-Exchange} operations on the form
+
+\begin{verbatim}
+Compare-Exchange(i, j)
+Compare-Exchange(i+1, j+1)
+Compare-Exchange(i+2, j+2)
+Compare-Exchange(i+3, j+3)
+
+|i-j| >= 4
+\end{verbatim}
+
+\noindent
+it will be possible to load each set of numbers using a single load operation.
+
+Also, SSE load operations that are not aligned at a 16-byte boundary of memory are supposedly slower than aligned loads, which is another important consideration when adapting algorithms to work with this particular instruction set. This requires the \verb!i! and \verb!j! of the previous example to be divisible by 4.
+
+When compiled with \texttt{g++ -Ofast -march=native}, an SSE-enabled 4-element \texttt{Compare-Exchange} will often produce the following assembly:
+\begin{verbatim}
+	movdqa	(%rdi), %xmm1
+	movdqa	(%rsi), %xmm0
+	movdqa	%xmm1, %xmm2
+	pminsd	%xmm0, %xmm2
+	pmaxsd	%xmm1, %xmm0
+	movaps	%xmm2, (%rdi)
+	movaps	%xmm0, (%rsi)
+\end{verbatim}
+
+\noindent
+as opposed to using \texttt{std::swap}, which produces the following assembly
+\footnote{
+A more thorough discussion on the assembly produced by various implementations of the \texttt{Compare-Exchange} operation is presented in Section~\ref{sec:CompareExchangeImpl}.
+}
+:
+\begin{multicols}{2}
+\begin{verbatim}
+	movl	(%rsi), %edx
+	movl	(%rdi), %eax
+	cmpl	%eax, %edx
+	jge	.L2
+	movl	%edx, (%rdi)
+	movl	%eax, (%rsi)
+.L2:
+	movl	4(%rsi), %edx
+	movl	4(%rdi), %eax
+	cmpl	%eax, %edx
+	jge	.L3
+	movl	%edx, 4(%rdi)
+	movl	%eax, 4(%rsi)
+.L3:
+	movl	8(%rsi), %edx
+	movl	8(%rdi), %eax
+	cmpl	%eax, %edx
+	jge	.L4
+	movl	%edx, 8(%rdi)
+	movl	%eax, 8(%rsi)
+.L4:
+	movl	12(%rsi), %edx
+	movl	12(%rdi), %eax
+	cmpl	%eax, %edx
+	jge	.L1
+	movl	%edx, 12(%rdi)
+	movl	%eax, 12(%rsi)
+.L1:
+\end{verbatim}
+\end{multicols}
+
+The reliance on data access patterns means that the performance gain of using SSE instructions can vary widely from algorithm to algorithm. 
+An example of excellent access patterns are the comparisons of the bitonic merging used in Bitonic Sort, while Annealing Sort is a great example of a data-oblivious algorithm that simply does not lend itself to SIMD. Randomized Shellsort has access patterns that lie somewhat in-between, having one part of the input being contiguous, while the other is not. Pratt's Shellsort and Shaker Sort both have blocked comparisons, but suffer from a lack of 16-byte alignments.
+Odd-Even Mergesort is generally not well suited for SIMD instructions unless one chooses to separate the odd and even elements before the recursive call, where it becomes possible to apply unaligned SIMD comparisons before joining the two sets.
+
+The experiments in Section~\ref{sec:SIMDExperiments} shows just how important access patterns  for SIMD operations can be for data-oblivious sorting, and how well the SSE4.1 instruction set works in practice.
+

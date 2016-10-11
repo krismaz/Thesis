@@ -1,0 +1,87 @@
+\chapter{Experiments}
+\label{ch:chexperiments}
+
+\section{Experimentation Setup and Details} \FloatBarrier
+
+All the experiments in this chapter are run on a machine with the following hardware, unless otherwise noted:
+
+\begin{description}
+\item[CPU:] Intel i7-M620, 2.67GHz, 4 MB Cache
+\item[RAM:] 6GB
+\item[GPU:] NVIDIA Quadro FX 880M 
+\item[Operating System:] Ubuntu 14.04 LTS
+\end{description}
+
+All programs involved were compiled using \texttt{g++} version 4.9, using the following extra flags;
+
+\begin{description}
+\item[\texttt{-Ofast}:] Use the highest optimization level, and favour speed over executable size.
+\item[\texttt{-std=c++11}:] Use the C++11 standard
+\item[\texttt{-march=native}:] Generate code that utilizes the local machine architecture, instead of generic x86 CPUs
+\item[\texttt{-fopenmp}:] Include OpenMP support
+\end{description}
+
+Hardware counters for running time, cache misses, branch mispredictions, and similar performance metrics were obtained using the \texttt{perf} toolset.
+
+All the algorithms are made to sort 32-bit signed integers, as this is representative for sorting performance and simplifies the \texttt{Compare-Exchange} operation.
+
+In the graphs, the algorithms will be named as follows:
+
+\begin{description}
+\item[RandShell:] Randomized Shellsort
+\item[AnnealingSort:] Annealing Sort
+\item[BitonicSort:] Bitonic Sort
+\item[OEMergeSort:] Odd-Even Mergesort
+\item[\texttt{std::sort}:] \texttt{c++} std::sort \footnote{
+By \texttt{C++11 std::sort} is required to be $O(n \log n)$ worst case running time. To our knowledge \texttt{g++4.9} uses a variant of Introsort. 
+}
+\item[Pratt:] Pratt's Shellsort
+\item[ShakerSort:] Shaker Sort
+\item[\_SBuffer:] Indicates a variant algorithm using a special buffering strategy, reordering elements and performing a single of recursion simultaneously
+\item[\_DBuffer:] Indicates a variant algorithm using a special buffering strategy, reordering elements and performing two layers of recursion simultaneously
+\item[\_SIMD:] Indicates a variant algorithm using the SSE instruction set
+\item[\_CUDA:] Indicates a variant algorithm using the CUDA architecture
+\item[\_OMP:] Indicates a variant algorithm using the OpenMP framework architecture
+\end{description}
+
+
+\input{RandomizedShellsortExperiments}
+
+\input{ShellsortExperiments}
+
+\input{AnnealingExperiments}
+
+\input{OECacheExperiments}
+
+\input{CompareExchangeExperiments}
+
+\input{SIMDExperiments}
+
+\input{CUDAExperiment}
+
+\input{OMPExperiments}
+
+
+\FloatBarrier
+\section{Experimental Results Summary}
+
+As a concluding figure for this chapter, we present Table~\ref{tab:algtimes}, that shows the execution time, in seconds, for each algorithm and optimization scheme for the largest available input size. Each algorithm has had the fastest optimization scheme marked in bold.
+Note that the OpenMP results are slightly skewed towards a higher value than that of the other optimization schemes, as the high-precision CPU-time clock is not applicable to multi-threading.
+
+\begin{table}[!h]
+\centering
+\begin{tabular}{|l|c c c c|}
+\showrowcolors
+\hline
+& Base & SIMD & CUDA & OpenMP  \\ \hline
+Randomized Shellsort & 22.6 & 20.2 & \textbf{20.1} & 21.5\\ 
+Bitonic Sort & 6.41 & 2.02 & \textbf{1.80} & 5.61\\ 
+Odd-Even Mergesort & 8.15 & 7.60 & \textbf{2.76} & 7.02\\ 
+Pratt's Shellsort & 8.82  & 4.50 & \textbf{4.11} & 5.85 \\ 
+Shaker Sort & 3.48 & \textbf{1.75} & 2.46 & 2.65\\ 
+Annealing Sort & \textbf{67.3} & - & - & - \\ \hline
+\end{tabular}
+\caption{Algorithm performance overview}
+\label{tab:algtimes}
+
+\end{table} 

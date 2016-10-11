@@ -1,0 +1,57 @@
+\section{Algorithm-Specific Implementation Notes} \FloatBarrier
+\label{sec:specificimpl}
+
+\subsection{Randomized Shellsort}
+
+The analysis for Randomized Shellsort given in~\citeA{RandShellSort} requires $c \geq 4$, and a clean-up phase to remove a small amount of straggling elements.
+It is however mentioned in the paper, that both the clean-up phase, and the high value of the constant $c$ are the results of an overly pessimistic analysis, and they show that the algorithm will sort with very high probability using $c = 1$ and no clean-up phase. Our own testing suggests the same, and the Randomized Shellsort algorithm used in the tests has no clean-up, and a $c$ kept at 1.
+
+Extending the algorithm to arbitrary $n$ consist of picking jump sizes that are of the form $2^k$ and smaller than $n$. This makes the last region extend beyond the input size if it is not also a power of 2, but this is easily negated by adjusting the loop condition of \texttt{RegionCompare} procedure of Algorithm~\ref{RegionCompare}. 
+The description of the algorithm assumes that $n$ is a power of 2, and that region sizes can be obtained by repeatedly halving the size. If $n$ is not a power of two, and one blindly constructs region sizes by halving, the resulting ordering of elements could contain a larger amount of errors than what is obtained by using powers of 2.
+
+A practical optimization for Randomized Shellsort consists of replacing the region comparison for region of size 8 with a sorting network taking 16 inputs, and skipping region sizes of 4, 2, and 1. This may require more comparisons than regular Randomized Shellsort for low values of $c$, but the overhead of a predefined sorting network is much lower than that of Randomized Shellsort, leading to a slight decrease in overall wall-clock time used to sort the input.
+
+\subsection{Annealing Sort}
+\label{sec:AnnealingSortImplementation}
+
+The Annealing Sort used in the experiments was implemented following the pseudo-code of~\citeA{AnnealingSort} closely.
+The annealing sequence is constructed anew before sorting, but this overhead is negligible compared to the time spent performing comparisons.
+
+As mentioned in the description of Annealing Sort, the constants used in the annealing sequence are high, but the algorithm is implemented in a way such that the parameters can be chosen at runtime. In fact, the entirety of Section~\ref{sec:AnnealingExperiments} of the experiments chapter is dedicated to finding good values for these parameters.
+
+It is also worth noting that the first phase requires $2n \geq \log^6n$, assuming $q \geq 1$, which in turn requires $n \geq 2.29 \times 10^8$. Inputs of this size, while a possibility on modern machines, are outside the range of the experiments presented in Chapter~\ref{ch:chexperiments}. The third phase, requiring $64e^2 n \log n$ comparisons, is also a likely target for lowering the amount of comparisons.
+
+\subsection{Bitonic Sort}
+\label{sec:BitonicImplementation}
+
+The Bitonic Sort used in the experiments is implemented to order \texttt{Compare-Exchange} operations recursively, mimicking the description from Section~\ref{sec:BitonicSort}. This specific ordering of the sorting network is easily adaptable to modern hardware. Further details on the reasoning for the choice of a recursive layout for Bitonic Sort being especially important for modern hardware is briefly discussed in Section~\ref{sec:BitonicCache}.
+
+Due to the static nature of sorting networks, Bitonic  Sort benefits greatly from compile-time optimization.
+This is exploited  by assuming the input to be a power of $2^k$, and supplying $k$ as a template parameter at compile-time, constructing fixed-size sorters for the first 31 values of $k$. A simple selection function can find the suitable power of 2 to use at runtime, and recursive calls will simply have $k' = k-1$. This allows the compiler to aggressively optimize loops with impressive performance gains, as shown in Appendix~\ref{app:BitonicSize}.
+
+Should $n$ not be a power of two it is possible to construct non-templated version of Bitonic Sort, where loop parameters and recursive calls are adapted to work for arbitrary sizes of input. 
+This will however make the algorithm slightly more complicated, and the compiler will not be able to perform as favourable optimizations as for input sizes that are powers of 2, and it might be more beneficial to simply pad the input with enough dummy elements to bring the input size up to the nearest power of 2 larger than $n$.
+
+In practice, the descending part of the bitonic sequence is not created by sorting and then reversing, but instead done by controlling the sorting direction by another template parameter. This cuts down on the running time, while still maintaining the easily identifiable structure of the algorithm.
+
+\subsection{Odd-Even Mergesort}
+\label{OEMergesortImpl}
+
+Odd-Even Mergesort, when implemented recursively in the same way as Bitonic Sort, has many of the same properties, and also benefits from having $n = 2^k$ and using templates for aggressive loop unrolling. Additionally, should $n$ not be a power of two, it is also possible to construct a version of Odd-Even Mergesort that modifies recursive calls and loop conditions to work with arbitrary $n$, or use the methods described for bitonic sorting.
+
+A big drawback of Odd-Even Mergesort is selecting the odd and even sequences of for the recursive call during the merging operation. There are two main solutions to this problem, but neither are without problems.
+
+One solution is to control the distance between elements as a parameter that doubles at each level of the recursion. This is great for small data sizes, and can be done in-place, but the moment data moves beyond the size of the CPU cache performance degrades rapidly due to cache misses from the large jumps in indexes.
+
+Another solution is using a buffer to hold data for the recursive calls during the merging. This consist of having a buffer of size $n$, and moving even elements to the first half of the buffer, and odd elements to the second half of the buffer. Recursive calls can now be made on the data of the buffer, using the input array as the buffer for the recursive call. Data can then be moved back into the input before comparisons are made. This requires an additional linear amount of space, but makes memory accesses much more localized, and stops the algorithm from completely thrashing the CPU cache. When using SIMD it is also beneficial to have odd and even elements separated to enable 4-by-4 comparisons.
+Additional shuffling of elements to achieve 16-byte alignment was attempted, but the overhead of moving elements quickly overshadowed the performance gained from aligned SSE loads. 
+
+\subsection{Shellsort Variants}
+\label{sec:ShellsortImplementation}
+
+Both variants of Shellsort are implemented as fairly standard loops, following the pseudo-ALGOL of~\citeA{PrattThesis}.
+
+Pratt's Shellsort executes \texttt{Compare-Exchange} operations as a nested loop directly within the two loops that compute the jump sequence of the algorithm. This confines the entire algorithm to a set of nested loops, which should keep any overhead as low as possible. Unfortunately, the jump sequence is not computed at compile-time, which might have allowed for more aggressive compile-time optimization, but the loop conditions are unfortunately not easy to compute before $n$ is known.
+
+For Shaker Sort, the sequence of  $\floor{1.7^j}+1 < n$ was chosen, and the amount of 1-shakes performed as the final phase of the algorithm is fixed at two, to ensure data-obliviousness. Note that this gives the algorithm an unknown chance of failure, as a constant amount of 1-shakes cannot handle all possible input configurations, based on the experiments performed in~\citeA{BadShaker}. As mentioned in Section~\ref{sec:ShellsortImplementation}, the carefully crafted sequences that cause failures in Shaker Sort could be avoided be shuffling the input, but this is omitted as the experiments focus on uniformly random data. To ensure that the algorithm still maintains a high probability of sorting even when using only two 1-shake passes and no shuffling, it was tested on samples of size $2^k$ for $k$ from $10$ to $23$, showing no failures on 100 random samples of each size.
+

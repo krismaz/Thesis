@@ -1,0 +1,79 @@
+\FloatBarrier 
+\section{Annealing Sort}
+
+Annealing Sort~\citeA{AnnealingSort}, like Randomized Shellsort, is a randomized data-oblivious sorting algorithm that will sort data with very high probability in $\Theta(n \log n)$ \texttt{Compare-Exchange} operations.
+
+Annealing Sort borrows its name from Simulated Annealing~\citeB{SimulatedAnnealing}, the algorithmic paradigm that inspired the algorithm, but since sorting is not an optimization problem, the basic pattern of Simulated Annealing is only slightly related to the actual operations of the algorithm.
+
+When considering this algorithm, keep in mind that the algorithm performs a random pattern of \texttt{Compare-Exchange} operations based entirely on the size of the input, which qualifies it as a randomized data-oblivious algorithm.
+
+\subsection{The Main Algorithm}
+\label{sec:AnnealingSortMain}
+
+Annealing Sort relies on a sequence of temperatures and repetitions, referred to as the \emph{annealing schedule}. This schedule is entirely dependent on input size, and picking a good sequence for this schedule is crucial to both the performance and correctness of the algorithm.
+
+For each entry in the annealing schedule, consisting of a temperature $t$ and a repetition count $r$, the algorithm will perform a run through the input data, performing $r$ \texttt{Compare-Exchange} operations between the current index, and elements at most $t$ further up the input. 
+This is followed by a similar run, going backwards, comparing elements to those further down the input.
+
+In loose terms, this is similar to the \emph{shaker} phases of Randomized Shellsort, and the analysis of the algorithm closely follows that of~\citeA{RandShellSort}, but instead of having fixed borders betweens regions, they slide up and down the input following the current element.
+
+Note that the algorithm will perform at most $2n\cdot\sum{r_i}$  \texttt{Compare-Exchange} operations, where $r_i$ specifies the number of repetitions in the entry $i$ of the annealing sequence.
+
+The algorithm in described using pseudo-code in Algortihm~\ref{AnnealingSort}.
+If nothing else, the algorithm is beautifully simple, once the annealing sequence is known.
+
+\begin{algorithm}
+\caption{Annealing Sort}\label{AnnealingSort}
+\begin{algorithmic}[1]
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $n$: Size of $A$
+\Procedure{AnnealingSort}{$A, n$}
+\For {$(t, r)$ in Annealing Sequence}
+	\For {$i = 0 \dots n-2$}
+		\For{$j = 1 \dots r$}
+			\State {$\mathtt{Compare\mbox{-}Exchange}(A, i, \mathtt{random\mbox{-}choice}([i+1: \min(i+t, n-1)]))$}
+		\EndFor
+	\EndFor
+	\For {$i = n-1 \dots 1$}
+		\For{$j = 1 \dots r$}
+			\State {$\mathtt{Compare\mbox{-}Exchange}(A, \mathtt{random\mbox{-}choice}([\max(i-t, 0): i-1]), i)$}
+		\EndFor
+	\EndFor
+\EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+
+\subsection{Annealing Schedule}
+
+As mentioned in Section~\ref{sec:AnnealingSortMain}, finding the right Annealing Schedule plays a big role in Annealing Sort. Luckily~\citeA{AnnealingSort} shows how to construct a 3-part schedule that will both keep the number of \texttt{Compare-Exchange} operations at $\Theta(n \log n)$, and make the algorithm sort with very high probability.
+
+The annealing schedule is as follows;
+
+\begin{description}
+\item[Phase one:] $[(n/2, c), (n/2, c), (n/4, c), (n/4, c) \dots (q \log^6 n, c), (q \log^6 n, c)]$ for some $q \geq 1$ and $c > 1$
+\item[Phase two:] $[(q \log^6 n, r),((q/2) \log^6 n, r), ((q/4) \log^6 n, r) \dots (g \log n, r)]$ using $q$ from phase one, $g \geq 1$,  and $r$ being $\Theta(\frac{\log n}{\log \log n})$
+\item[Phase three:] $[(1,1), (1,1) \dots (1,1)]$ of length $g \log n$
+\end{description}
+
+Concatenating these three sequences, we get the desired annealing schedule.
+
+In the analysis, it is hinted that we want $c \geq 9$ and $g = 64e^2$, but little effort is done in determining $q$ and a suitable factor for $r$. Though these constant factors seem impractically large, they may easily be the result of an overly pessimistic analysis, and an experimental evaluation of the proper scale of these factors is presented in Section~\ref{sec:AnnealingExperiments}.
+
+When using this annealing schedule, the total number of \texttt{Compare-Exchange} operations per $n$ will be 
+\[
+2c \max(0, \log 2n - \log (q \log^6 n)) + r \max(0,\log (q \log^6 n) - \log (g \log n)) + g \log n
+\]
+
+Since we have $c$, $q$, $g$ all constants bigger than 0, and $r=\Theta(\frac{\log n}{\log \log n})$ this gives us:
+
+\begin{multline*}
+2c \max(0, \log 2n - \log (q \log^6 n)) + r \max(0,\log (q \log^6 n) - \log (g \log n)) + g \log n
+\\
+\le 2c \log 2n  + r \log (q \log^6 n) + g \log n
+=
+\Theta(\log n)\\
+\end{multline*}
+
+This gives the algorithm a total running time of $\Theta(n \log n)$.

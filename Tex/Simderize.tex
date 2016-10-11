@@ -1,0 +1,429 @@
+\chapter{Pre-Processing SIMD Instructions}
+\label{ch:SIMDerize}
+
+In Section~\ref{sec:SIMDImpl} we discussed the act of manually applying SIMD operations to speed up execution of sorting networks on modern hardware, and briefly touched on the subject of when and how such operations are suitable. In this chapter we further extend the work in applying SIMD operations on sorting networks, and describe a method of automatically determining where SIMD operations can be applied, in any given sorting network.
+
+Since the order of operations in a sorting network can be completely determined at compile-time, any compiler optimizing for vector-based instruction sets should be able to achieve a high level of parallel execution. When working with randomized data-oblivious sorting algorithms, where the order of operations cannot be determined at compile-time, it is still possible to vectorize execution of operations by using just-in-time compilation. In fact, the description we give of an automatic vectorizer is highly applicable to just-in-time compilation using a queue of operations of the same length as the width of the vector operations available at the local hardware.
+
+In the literature we find a great deal of investigation into the possibility of compilers outputting SIMD-compatible programs. Vectorizing compilers have a long and interesting history, as shown in~\citeA{VectorizingFortran} where different compilers for Fortran are compared based on their ability to automatically generate SIMD-enabled programs. Lately this ability in compilers have been re-evaluated, as shown by~\citeA{VectorizationEvaluation}, where the results show that modern compilers are not always impressive in their applications SIMD instructions. Some techniques that allow compilers to transform programs into efficient vectorized programs are presented in~\citeA{VectorizingMMX}, where it is also explained how SIMD instructions can be used without the wide registers normally reserved for such purposes.  
+
+\section{Encoding Sorting Networks}
+
+In order to programmatically analyse sorting networks efficiently, we must first condense them into an easily workable format. Since data-oblivious sorting algorithms only affect the input data through the application of the \texttt{Compare-Exchange} operation, we can describe such algorithms as a series of \texttt{Compare-Exchange} operations, and perform our vectorization independently of the actual structure of the algorithm.
+
+Let us encode a single \texttt{Compare-Exchange} operation as $\mathtt{CE}(i,j)$, where $i < j \le n$, and a reverse \texttt{Compare-Exchange} operation in much the same way, but as  $\mathtt{CE}(i,j)$, where $j < i \le n$. This allows us to easily record any sorting network for analysis. As an example, Bitonic Sort, for $n = 8$, using a recursive ordering of comparisons, can be  represented as shown in Figure~\ref{fig:BitonicCE}.
+
+\begin{figure}
+\begin{multicols}{3}
+\begin{verbatim}
+0: CE(0, 1)
+1: CE(3, 2)
+2: CE(0, 2)
+3: CE(1, 3)
+4: CE(0, 1)
+5: CE(2, 3)
+6: CE(7, 6)
+7: CE(4, 5)
+8: CE(7, 5)
+9: CE(6, 4)
+10: CE(7, 6)
+11: CE(5, 4)
+12: CE(0, 4)
+13: CE(1, 5)
+14: CE(2, 6)
+15: CE(3, 7)
+16: CE(0, 2)
+17: CE(1, 3)
+18: CE(0, 1)
+19: CE(2, 3)
+20: CE(4, 6)
+21: CE(5, 7)
+22: CE(4, 5)
+23: CE(6, 7)
+\end{verbatim}
+\end{multicols}
+\caption{Bitonic Sort Encoded}
+\label{fig:BitonicCE}
+\end{figure}
+
+Constructing such encodings from working implementations of data-oblivious sorting algorithms is easy, as one can simply record the calls made to the \texttt{Compare-Exchange} operation, and store the calls in order. These recordings can then be played back at a later time to execute another run of the same sorting algorithms, though this is of little practical use since the recordings quickly grow much larger than the input data.
+
+Instead, we will focus on analysing these recorded executions of sorting networks to find sequences of operations that can be replaced by a single vectorized operation.
+
+\section{Vectorizing Transformations} 
+
+There are a wide variety of SIMD architectures available in modern hardware, and as such there are many possible ways of applying vectorization if one wishes to accommodate all possible architectures. In order to keep this chapter at a reasonable length, we will focus on keeping the operations as similar to those available in the SSE4.1 instruction set, but keep the width of the SIMD instructions variable, to accommodate for changing data types and newer, wider vector instructions.
+For the next few subsections, let \texttt{k} be the width of a vectorizing \texttt{Compare-Exchange} operation.
+
+\subsection{Aligned Consecutive Vectorization}
+
+
+The first automatic vectorization technique we will describe, is an aligned vectorized \texttt{Compare-Exchange}.
+
+Such an operation, encoded as $\mathtt{CEkA}(i,j)$ performs a vectorized series of \texttt{Compare-Exchange} operations equivalent to $\mathtt{CE}(i,j), \mathtt{CE}(i+1, j+1) \dots \mathtt{CE}(i+\mathtt{k}-1, j+\mathtt{k}-1)$, with the important restriction that $i \bmod \mathtt{k} = j \bmod \mathtt{k} = 0$.
+
+When we look for candidates for this vectorization technique, we attempt to find sequences of $\mathtt{CE}(i_1, j_1), \mathtt{CE}(i_2, j_2) \dots \mathtt{CE}(i_\mathtt{k}, j_\mathtt{k})$ where  
+
+\[
+\begin{aligned}
+&i_1 \bmod \mathtt{k} = j_1 \bmod \mathtt{k} = 0 && Alignment\\ 
+&\forall_{l=1}^{\mathtt{k}-1} (i_l+1=i_{l+1}, j_l+1=j_{l+1}) && Sequense \\
+&\forall_{l_1=1}^{\mathtt{k}} \forall_{l_2=1}^{\mathtt{k}} (i_{l_1} \neq j_{l_2})  && Disjoint
+\end{aligned}
+\]
+
+If we can find any such sequences, we can safely replace them with a vectorized instruction. The result of applying this transformation on the Bitonic Sort of Figure~\ref{fig:BitonicCE}, with $\mathtt{k} = 4$, we get the sequence shown in Figure~\ref{fig:BitonicCEA}.
+\begin{figure}
+\begin{multicols}{3}
+\begin{verbatim}
+0: CE(0, 1)
+1: CE(3, 2)
+2: CE(0, 2)
+3: CE(1, 3)
+4: CE(0, 1)
+5: CE(2, 3)
+6: CE(7, 6)
+7: CE(4, 5)
+8: CE(7, 5)
+9: CE(6, 4)
+10: CE(7, 6)
+11: CE(5, 4)
+12: CE4A(0, 4)
+13: CE(0, 2)
+14: CE(1, 3)
+15: CE(0, 1)
+16: CE(2, 3)
+17: CE(4, 6)
+18: CE(5, 7)
+19: CE(4, 5)
+20: CE(6, 7)
+\end{verbatim}
+\end{multicols}
+\caption{Bitonic Sort Vectorized}
+\label{fig:BitonicCEA}
+\end{figure}
+
+Note that since the \texttt{Compare-Exchange} operations of such a sequence are completely independent, we can perform the same substitution on a reversed sequence, which is important for certain algorithms.
+
+\subsection{Unaligned Consecutive Vectorization}
+
+The alignment restriction of the previous subsection is included due to the performance degradation arising from performing an unaligned load in most SIMD architectures. Unfortunately, certain algorithms do not use this strictly aligned access pattern. As an example of unaligned access patterns, see Figure~\ref{fig:ShakerCE}, where we can see the first 22 operation of a Shaker Sort with $n=32$.
+
+\begin{figure}
+\begin{multicols}{3}
+\begin{verbatim}
+0: CE(0,25)
+1: CE(1,26)
+2: CE(2,27)
+3: CE(3,28)
+4: CE(4,29)
+5: CE(5,30)
+6: CE(6,31)
+7: CE(6,31)
+8: CE(5,30)
+9: CE(4,29)
+10: CE(3,28)
+11: CE(2,27)
+12: CE(1,26)
+13: CE(0,25)
+14: CE(0,15)
+15: CE(1,16)
+16: CE(2,17)
+17: CE(3,18)
+18: CE(4,19)
+19: CE(5,20)
+20: CE(6,21)
+21: CE(7,22)
+...
+\end{verbatim}
+\end{multicols}
+\caption{Shaker Sort Encoded}
+\label{fig:ShakerCE}
+\end{figure}
+
+Luckily, newer hardware alleviates the performance problems from unaligned memory accesses during SIMD operation, and we can allow for an unaligned variant of the vectorized  \texttt{Compare-Exchange} operation. This version, let us name it $\mathtt{CEkU}(i,j)$, follows the exact same methodology as $\mathtt{CEkA}(i,j)$ , with the alignment restriction removed.
+
+This allows us to match it against sequence following only two of the three previous rules, leaving only the following restrictions.
+
+\[
+\begin{aligned}
+&\forall_{l=1}^{\mathtt{k}-1} (i_l+1=i_{l+1}, j_l+1=j_{l+1}) && Sequense \\
+&\forall_{l_1=1}^{\mathtt{k}} \forall_{l_2=1}^{\mathtt{k}} (i_{l_1} \neq j_{l_2})  && Disjoint
+\end{aligned}
+\]
+
+
+Applying this transformation to the part of Shaker Sort shown in Figure~\ref{fig:ShakerCE} gives us the vectorized sequence of Figure~\ref{fig:ShakerCEU}.
+
+\begin{figure}
+\begin{multicols}{3}
+\begin{verbatim}
+0: CE4U(0, 25)
+1: CE(4, 29)
+2: CE(5, 30)
+3: CE(6, 31)
+4: CE4U(3, 28)
+5: CE(2, 27)
+6: CE(1, 26)
+7: CE(0, 25)
+8: CE4U(0, 15)
+9: CE4U(4, 19)
+...
+\end{verbatim}
+\end{multicols}
+\caption{Shaker Sort Vectorized}
+\label{fig:ShakerCEU}
+\end{figure}
+
+In many ways, this operation functions exactly as the previous vectorization transformation, except it does not have the seemingly arbitrary restriction on starting indexes, but at a hardware level there can be a big difference between how aligned and unaligned loads are handled. In the SSE4.1 instruction set, aligned and unaligned loads into the vector registers are handled by separate instructions, whose performance vary depending on the underlying architecture.
+
+\subsection{Shuffled Access Vectorization}
+
+Finally, in order to conform to the requirements of the randomized algorithms, we present a shuffled vectorization technique. This transformation removes the requirement of the original comparisons being consecutive elements in memory, and fits a much broader spectrum of algorithms. As an example encoding of an algorithm where comparisons are non-consecutive, Figure~\ref{fig:RandShellCE} shows the first 23 operations of a run of Randomized Shellsort with $n=32$.
+
+\begin{figure}
+\begin{multicols}{3}
+\begin{verbatim}
+0: CE(0,30)
+1: CE(1,20)
+2: CE(2,23)
+3: CE(3,17)
+4: CE(4,24)
+5: CE(5,27)
+6: CE(6,21)
+7: CE(7,29)
+8: CE(8,18)
+9: CE(9,22)
+10: CE(10,25)
+11: CE(11,28)
+12: CE(12,19)
+13: CE(13,31)
+14: CE(14,16)
+15: CE(15,26)
+16: CE(0,17)
+17: CE(1,31)
+18: CE(2,22)
+19: CE(3,23)
+20: CE(4,18)
+21: CE(5,16)
+22: CE(6,21)
+...
+\end{verbatim}
+\end{multicols}
+\caption{Randomized Shellsort Encoded}
+\label{fig:RandShellCE}
+\end{figure}
+
+The new vectorized operation, encoded as $\mathtt{CEkSHUF}(i_1, i_2 \dots i_\mathtt{k},j_1, j_2 \dots j_\mathtt{k})$ will perform a vectorized series of \texttt{Compare-Exchange} operations equivalent to $\mathtt{CE}(i_1,j_1), \mathtt{CE}(i_2, j_2) \dots \mathtt{CE}(i_\mathtt{k}, j_\mathtt{k})$.
+
+Finding candidates for this transformation is much less restrictive than other vectorization transformations, as we need only find sequences  $\mathtt{CE}(i_1, j_1), \mathtt{CE}(i_2, j_2) \dots \mathtt{CE}(i_\mathtt{k}, j_\mathtt{k})$ that obey two rules:
+
+
+\[
+\begin{aligned}
+&\forall_{l_1=1}^{\mathtt{k}} \forall_{l_2=l_1+1}^{\mathtt{k}} (i_{l_1} \neq i_{l_2}, j_{l_1} \neq j_{l_2})  && Unique\\
+&\forall_{l_1=1}^{\mathtt{k}} \forall_{l_2=1}^{\mathtt{k}} (i_{l_1} \neq j_{l_2})  && Disjoint
+\end{aligned}
+\]
+
+Sequences of operations that follow these two rules can be safely vectorized using shuffled loads. As an example, let us apply the transformation to the sequence shown in Figure~\ref{fig:RandShellCE}, with $\mathtt{k} =4$,which gives us the resulting vectorized encoding shown in Figure~\ref{fig:RandShellCESHUF}.
+
+\begin{figure}
+\begin{verbatim}
+0: CE4SHUF(0, 1, 2, 3, 31, 26, 30, 19)
+1: CE4SHUF(4, 5, 6, 7, 18, 21, 16, 28)
+2: CE4SHUF(8, 9, 10, 11, 20, 22, 27, 29)
+3: CE4SHUF(12, 13, 14, 15, 17, 23, 25, 24)
+4: CE4SHUF(0, 1, 2, 3, 27, 20, 23, 19)
+5: CE(4, 18)
+6: CE(5, 31)
+7: CE(6, 22)
+...
+\end{verbatim}
+\caption{Randomized Shellsort Vectorized}
+\label{fig:RandShellCESHUF}
+\end{figure}
+
+While this transformation is useful for certain algorithms, it suffers from a lack hardware support, as each input element must be loaded into the vector register separately. On older hardware, where such loads are always required, this might not prove to be much of a problem, but on newer CPU's such operations can be expensive. It should be noted that even on newer hardware, a slight performance improvement may still be obtainable by using this transformation, as the extra instructions dedicated to manually moving elements to SSE registers can be performed while waiting for memory loads.
+
+\subsection{Vectorization Results}
+
+Having established this notion of vectorization transformations, let us see how well these transformations can be applied full traces of data-oblivious sorting algorithms. 
+Table~\ref{tab:AutoVectorizaionResults} shows the results of applying these simple vectorisation techniques to full traces of several data-oblivious algorithms, with $n = 4096, \mathtt{k} = 4$, and form the basis of the following discussion on the results of these vectorization techniques.
+
+\begin{table}[!ht]
+\begin{tabular}{|l c c c c|}
+\showrowcolors
+\hline
+Algorithm & Scalar & Aligned & Unaligned & Shuffled \\
+\hline
+Randomized Shellsort & 215048 & 213758 & 213617 & 72182\\
+
+Recursive Odd-Even MergeSort & 139263 & 139263 & 139263 & 57954\\
+
+Layered Odd-Even Mergesort & 139263 & 67074 & 67074 & 34818\\
+
+Recursive Bitonic Sort & 159744 & 75264 & 75264 & 56835\\
+
+Layered Bitonic Sort & 159744 & 75264 & 75264 & 39936\\
+
+Pratt's Shellsort & 183634 & 87889 & 55138 & 55114\\
+
+Shaker Sort & 125348 & 121730 & 55934 & 55934\\
+
+Annealing Sort & 524160 & 524160 & 524160 & 524160\\
+\hline
+\end{tabular}
+\caption{Automatic Vectorization Results, number of \texttt{CE*} operations}
+\label{tab:AutoVectorizaionResults}
+\end{table}
+
+Randomized Shellsort shows a clear reduction in the number of operations after having been processed, but only if shuffled SIMD operations are allowed. The reason why we are not seeing an exact reduction to $^1/_4$ of the amount of instructions is due to the small regions in the final parts of the algorithm making the sequences overlap.
+
+For the classic sorting networks of Bitonic Sort and Odd-Even Mergesort, we include two variants; one using recursive ordering of comparisons, much like they are described in their respective pseudo-code, and one using depth-ordering of comparisons, as described in Section~\ref{sec:CUDAImpl}. For Odd-Even Mergesort, depth-ordered operations are crucial unless one allows shuffled operations\footnote{This is somewhat contradictory to what is seen in the experiments, and the SIMD description. Keep in mind that the vectorization of the Odd-Even Mergesort used in the experiments is made possible due to a rearrangement of the data into a separate buffer, as part of an effort to reduce cache misses.}, though this is not the case for Bitonic Sort. We see a predictable full ¼ reduction of the number of operations for Bitonic Sort, and Odd-Even Mergesort being almost optimal when allowing shuffled operations and depth-ordering of operations.
+
+Both Pratt's Shellsort and Shaker Sort see an impressive reduction in their operation count, but are somewhat reliant on unaligned operations. Both are notably no dependent on shuffled operations.
+
+Finally, Annealing Sort shows absolute no reduction in the amount of operations performed by applying vectorisation.
+
+\subsection{Compilers and Vectorization}
+
+These techniques show what it should be possible to do for a proper vectorizing compiler, yet there is a certain distance between what \emph{can} be done, and what \emph{is} done by compiler.
+
+Perhaps the biggest problem for the actual compiler in automatically vectorizing data-oblivious algorithms can be to recognise the \texttt{Compare-Exchange} operation. As discussed in Section~\ref{sec:CompareExchangeImpl}, there is a selection of different ways to implement this operation, and whether they can be deemed suitable for replacement with SIMD instructions can be difficult to determine at compile-time.
+
+Though the compiler may have some problems in recognizing the \texttt{Compare-Exchange} operation, it does have the benefit of being able to re-arrange operations. A short contrived example is the sequence 
+\begin{multicols}{2}
+\begin{verbatim}
+0: CE(0,8)
+1: CE(2,10)
+2: CE(4,12)
+3: CE(6,14)
+4: CE(1,9)
+5: CE(3,11)
+6: CE(5,13)
+7: CE(7,15)
+\end{verbatim}
+\end{multicols}
+
+\noindent
+which cannot be vectorized without shuffling, but is equivalent to 
+
+\begin{multicols}{2}
+\begin{verbatim}
+0: CE(0,8)
+1: CE(1,9)
+2: CE(2,10)
+3: CE(3,11)
+4: CE(4,12)
+5: CE(5,13)
+6: CE(6,14)
+7: CE(7,15)
+\end{verbatim}
+\end{multicols}
+
+\noindent
+which is a prime candidate for aligned SIMD operations. A good compiler should be able to find such sequences and rearrange them to enable vectorization.
+
+\subsection{Rearranging Sorting Networks for Depth-wise Ordering}
+
+Having briefly touched on the subject of reordering operations, and having seen how depth-ordering can be an improvement for vectorization, let us consider a simple technique for reordering the \texttt{Compare-Exchange} operations.
+
+What is most important when reordering this type of operations is that the list of \texttt{Compare-Exchange} operations for each wire does not change, but we can re-order in any way we want, as long as we maintain this ordering. One way to do this is to fit the operations into the layers that are sometimes shown in diagrams of sorting networks.
+
+Let us consider a greedy strategy, that inserts \texttt{Compare-Exchange} operations into the first layer available that has not yet seen any of the indices involved in the operation. The pseudo-code corresponding to such a strategy is show in Algorithm~\ref{alg:Layerize}
+
+\begin{algorithm}
+\caption{Layer-Ordering}\label{alg:Layerize}
+\begin{algorithmic}[1]
+	\Statex $ops$ : A list of \texttt{Compare-Exchange} operations
+	\Statex $n$ : Amount of input wires in the sorting network
+\Procedure{LayerOrdering}{$ops, n$}
+\State {$Depths \gets [-1, -1,...,-1] \text{ of lenght } n$}
+\State {$Ordering \gets []$}
+\For {$(i, j)\ \mathbf{in}\ ops$}
+	\State{$depth \gets \max(Depths[i], Depths[j])+1$}
+	\State{$Depths[i], Depths[j] \gets depth, depth$}
+	\State{$Ordering\ {+}{=}\ [(depth, i, j)]$}
+\EndFor
+\State{$\mathtt{Sort}(Ordering)$}
+\State{$\mathbf{return} [(i,j)\ \mathbf{for}\ (depth, i, j)\ \mathbf{in}\ Ordering]$}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+It is easy to see that this short procedure does not break ordering for any given index, since any operation will be assigned to a depth that is at least one higher than any previous operation that uses any of the same indices.
+
+If we apply this re-ordering scheme to the trace of Figure~\ref{fig:BitonicCE}, we get the depth-ordered trace of Figure~\ref{fig:BitonicCEL} 
+
+
+\begin{figure}
+\begin{multicols}{3}
+\begin{verbatim}
+0: CE(0,1)
+1: CE(3,2)
+2: CE(4,5)
+3: CE(7,6)
+4: CE(0,2)
+5: CE(1,3)
+6: CE(6,4)
+7: CE(7,5)
+8: CE(0,1)
+9: CE(2,3)
+10: CE(5,4)
+11: CE(7,6)
+12: CE(0,4)
+13: CE(1,5)
+14: CE(2,6)
+15: CE(3,7)
+16: CE(0,2)
+17: CE(1,3)
+18: CE(4,6)
+19: CE(5,7)
+20: CE(0,1)
+21: CE(2,3)
+22: CE(4,5)
+23: CE(6,7)
+\end{verbatim}
+\end{multicols}
+\caption{Bitonic Sort Depth-Ordered}
+\label{fig:BitonicCEL}
+\end{figure}
+
+This technique is not the be-all and end-all solution for vectorization ordering, but it can help certain algorithms conform better to the requirements for some transformations. If we apply depth-ordering before the vectorization techniques, we get the number of operations shown in Table~\ref{tab:AutoVectorizaionLayered}.
+
+\begin{table}[!ht]
+\begin{tabular}{|l c c c c|}
+\hline
+Algorithm & Sequential & Aligned & Unaligned & Shuffled \\
+\hline
+Randomized Shellsort & 215048 & 213773 & 213560 & 64520\\
+
+Recursive Odd-Even Mergesort & 139263 & 71676 & 70143 & 34818\\
+
+Layered OddEven Mergesort & 139263 & 67074 & 67074 & 34818\\
+
+Recursive Bitonic Sort & 159744 & 75264 & 75264 & 39936\\
+
+Layered Bitonic Sort & 159744 & 75264 & 75264 & 39936\\
+
+Pratt' Shellsort & 183634 & 92467 & 55312 & 48217\\
+
+Shaker Sort & 125348 & 121730 & 71222 & 55916\\
+
+Annealing Sort & 524160 & 524160 & 524154 & 197529\\
+\hline
+\end{tabular}
+\caption{Automatic Vectorization with Depth-Ordering, number of \texttt{CE*} operations}
+\label{tab:AutoVectorizaionLayered}
+\end{table}
+
+We see a small improvement for Randomized Shellsort, but nothing major.
+
+The most important result, is that the classic sorting networks, Bitonic Sort and Odd-Even Mergesort, reach exact same amount of operations when allowing shuffled vectorization, not matter how they were originally laid out. Note that Odd-Even Mergesort does not reach the same number of operations when sequential operations are required, which happens due to not fully occupying all layers which leads to the algorithm placing some operations at a too early depth compared to the originally layered layout, and thereby messing up some sequences that would otherwise be targets for vectorization. 
+
+The two Shellsort variants actually see a certain degradation of performance from depth-ordering, since it breaks up the sequential access patterns that are already present in the original traces by interleaving the different elements of the sequences used by the algorithm. 
+
+Finally, we actually see an impressive result for Annealing Sort when allowing shuffled vectorization, as it splits repetitions on identical indices.
+
+As a final remark, we note that this technique is definitely useful, but must be performed with great care, but it should definitely be considered when working with compilers.

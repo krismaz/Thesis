@@ -1,0 +1,105 @@
+\section{$O(n \log n)$ netværk}
+
+\begin{frame}<beamer:0>[noframenumbering]{AKS}
+	\mycite{AKS}
+	\begin{itemize}
+		\item Deterministisk $O(n \log n)$ netværk, $O(\log n) dybde$
+		\item Upraktisk beskrivelse
+		\item Horrible konstanter
+		\item $\epsilon$-halvers
+			\begin{itemize}
+				\item $\epsilon k$ af de $k$ største elementer i første halvdel
+				\item $O(n)$, stærkt afhængig af $\epsilon$
+				\item Svær at implementere deterministisk
+				\item Randomizeret udgave er simpel
+			\end{itemize}
+		\item Mange varianter
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Zig-Zag Sort}
+	\mycite{ZigZag}
+	\begin{itemize}
+		\item Deterministisk $O(n \log n)$ netværk, $\Theta(n \log n) dybde$
+		\item Præcist beskrevet
+		\item Meget bedre konstanter, men meget dybt
+		\item Stadigt afhængig af $\epsilon$-halvers, men bedre $\epsilon$
+	\end{itemize}
+\end{frame}
+
+\begin{frame}<beamer:0>[noframenumbering]{Zig-Zag Sort}
+	\begin{block}{Zig-Zag Sort}
+ 	\tiny
+ 		\begin{algorithmic}
+			\Procedure{ZigZagSort}{$A, n$}
+				\State $ranges \gets [[0 \dots n-1]]$
+				\For{$1 \dots \log n$}
+					\State $new\_ranges \gets []$
+					\For{$r$ in $ranges$}
+						\State $left, right \gets \mathtt{split}(r)$
+						\State $\mathtt{Reduce}(left, right)$
+						\State $new\_ranges \gets new\_ranges \cup [left, right]$
+					\EndFor
+					\For{$i \gets 0 \dots |new\_ranges|-2$}
+					 	\State $\mathtt{swap}(new\_ranges[i], new\_ranges[i+1])$
+					 	\State $\mathtt{Reduce}(new\_ranges[i], new\_ranges[i+1])$
+					\EndFor\For{$i \gets |new\_ranges|-1 \dots 1$}
+					 	\State $\mathtt{swap}(new\_ranges[i-1], new\_ranges[i])$
+					 	\State $\mathtt{Reduce}(new\_ranges[i-1], new\_ranges[i])$
+					\EndFor
+					\State $ranges \gets new\_ranges$
+				\EndFor
+			\EndProcedure
+		\end{algorithmic}
+	\end{block}
+\end{frame}
+
+\begin{frame}<beamer:0>[noframenumbering]{Zig-Zag Sort}
+	\begin{block}{Reduce}
+ 		\begin{algorithmic}
+			\Procedure{Reduce}{$A, B$}
+				\If {$|A| + |B| \leq 8$}
+					\State $Sorter(A \cup B)$
+				\EndIf
+				\State $\epsilon \mbox{-}\mathtt{Halver}(A,B)$
+				\State $\mathtt{Attenuate}(A,B)$
+			\EndProcedure
+		\end{algorithmic}
+	\end{block}
+\end{frame}
+
+\begin{frame}<beamer:0>[noframenumbering]{Zig-Zag Sort}
+	\begin{block}{Attenuate}
+ 		\begin{algorithmic}
+ 		\footnotesize
+			\Procedure{Attenuate}{$A, B$}
+				\If {$|A| + |B| \leq 8$}
+					\State $Sorter(A \cup B)$
+				\EndIf
+				\State $(A_1, A_2), (B_1, B_2) \gets \mathtt{split}(A), \mathtt{split}(B)$
+				\State $\epsilon \mbox{-}\mathtt{Halver}(A_1,A_2)$
+				\State $\epsilon \mbox{-}\mathtt{Halver}(B_1,B_2)$
+				\State $\epsilon \mbox{-}\mathtt{Halver}(A_2,B_1)$
+				\State $\mathtt{Attenuate}(A_2,B_1)$
+				\State $(A^*_1, A^*_2), (B^*_1, B^*_2) \gets \mathtt{split}(A_2), \mathtt{split}(B_1)$
+				\State $\epsilon \mbox{-}\mathtt{Halver}(A^*_1,A^*_2)$
+				\State $\epsilon \mbox{-}\mathtt{Halver}(B^*_1,B^*_2)$
+				\State $\epsilon \mbox{-}\mathtt{Halver}(A^*_2,B^*_1)$
+				\State $\mathtt{Attenuate}(A_2,B_1)$
+			\EndProcedure
+		\end{algorithmic}
+	\end{block}
+\end{frame}
+
+\begin{frame}{Zig-Zag Sort}
+	\begin{itemize}
+		\item Reduce og Attenuate er $O(n)$
+		\item Dermed hele algoritmen $O(n \log n)$
+		\item Faktiske tal: $\approx 50 cn \log n$, hvis $\epsilon$-halver er $cn$
+		\item Praktisk implementation, $n = 1024$, \#sammenligninger:
+			\begin{itemize}
+				\item Zig-Zag Sort - $7056780$
+				\item Odd-Even Mergesort - $24063$
+			\end{itemize}
+	\end{itemize}
+\end{frame}

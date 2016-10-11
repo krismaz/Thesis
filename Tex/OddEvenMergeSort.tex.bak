@@ -1,0 +1,96 @@
+\FloatBarrier
+\section{Odd-Even Mergesort} 
+\label{sec:OddEvenMergesort}
+
+Odd-Even Mergesort is the sister algorithm of Bitonic Sort, and also comes from~\citeA{SNApplications}. The idea of requiring bitonic sequences for merging in  Bitonic Sort seems unintuitive, and Odd-Even Mergesort does away with that requirement, at the expense of slightly more complicated merging operation.
+Like Bitonic Sort, Odd-Even Mergesort performs $\Theta(n \log^2 n)$ comparisons, but the constant factors involved are slightly lower.
+
+\subsection{Odd-Even Merging}
+
+Given two sorted sequences, it is possible to merge them by dividing them into their odd and even parts, and then combining them into an interleaved sequence.
+
+The intuition of this merging scheme follows from the following observation:
+
+\noindent
+Let $A$ and $B$ be sorted sequences of length $N$.
+
+\noindent
+Let $C$ be the sorted merge of $A$ and $B$.
+
+$C$ might look something like this:
+
+\[
+C = {a_0, b_0, b_1, b_2, a_1, a_2, b_3 \dots}
+\]
+
+or
+
+\[
+C = {b_0, b_1, a_0, b_2, a_1, b_3, b_4 \dots}
+\]
+
+Now, imagine a grouping of $C$ as follows; 
+
+\[
+C = {a_0,(b_0, b_1), (b_2, a_1), (a_2, b_3) \dots}
+\]
+
+or
+
+\[
+C = {b_0, (b_1, a_0), (b_2, a_1), (b_3, b_4) \dots}
+\]
+
+What we see here, is that every pair of parenthesized numbers is made up of one odd-indexed number and one even-indexed. In fact~\citeA{SNApplications} shows that every merged sequence of two sorted sequences will follow this rule, and we can use this to construct $C$ in the following way.
+
+Divide $A$ and $B$ into odd and even indexes, and merge them recursively. Pick $c_0 = even_0$, pick $c_1 = \min(odd_0, even_1)$, $c_2 = \max(odd_0, even_1)$, $c_3 = \min(odd_1, even_2)$, $c_4 = \max(odd_1, even_2)$ \dots and so on. In case there is only one element in each subsequence, just perform a single \texttt{Compare-Exchange}. This gives us the following algorithm, shown as pseudo-code in Algorithm~\ref{OddEvenMerge}.
+
+\begin{algorithm}
+\caption{Odd-Even Merge}\label{OddEvenMerge}
+\begin{algorithmic}[1]
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $B$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $n$: Size of $A$ and $B$
+\Procedure{OddEvenMerge}{$A, B, n$}
+\If {$n=1$}
+	\State $C \gets [{A[0], B[0]}]$
+	\State $\mathtt{Compare-Exchange}(C, 0, 1)$
+\Else
+	\State {$odd \gets \mathtt{OddEvenMerge}(\mathtt{odd}(A),\mathtt{odd}(B), n/2)$}
+	\State {$even \gets \mathtt{OddEvenMerge}(\mathtt{even}(A),\mathtt{even}(B), n/2)$}
+	\For {$i = 0 \dots n/2-1} $
+		\State {$C[2i] \gets even[i]$}
+		\State {$C[2i+1] \gets odd[i]$}
+	\EndFor
+	\For {$i = 0 \dots n/2-2} $
+		\State {$\mathtt{Compare\mbox{-}Exchange}(C, 2i+1, 2i+2)$}
+	\EndFor
+\EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{The Main Algorithm}
+
+Given the Odd-Even merge construction, we can perform a straight-forward merge sort.
+
+The interesting part of Odd-Even Mergesort is perhaps that it is possible to construct a merging network that has so few prerequisites, which leads to an exceptionally simple algorithm. Unfortunately, the price of having a simple merge sort, is a more complex merge step.
+
+The exact procedure for merge sorting using Odd-Even Merging is shown as pseudo-code in Algorithm~\ref{OddEvenMergeSort}
+
+\begin{algorithm}
+\caption{Odd-Even Mergesort}\label{OddEvenMergeSort}
+\begin{algorithmic}[1]
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $n$: Size of $A$
+\Procedure{OddEvenMergeSort}{$A, n$}
+\If {$n>1$}
+	\State{$\mathtt{OddEvenMergeSort}(A[0 \dots n/2-1], n/2)$}
+	\State{$\mathtt{OddEvenMergeSort}(A[n/2 \dots n-1], n/2)$}
+	\State{$\mathtt{OddEvenMerge}(A[0 \dots n/2-1], A[n/2 \dots n-1], n)$}
+\EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+The running time of Odd-Even Mergesort, like Bitonic Sort follows from the Master Theorem~\citeB{Cormen}.

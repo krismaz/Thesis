@@ -1,0 +1,70 @@
+\FloatBarrier
+\section{Shellsort Variants} 
+
+Shellsort, as described by~\citeA{Shellsort}, has been around for a long time, and a great deal of research has been dedicated to studying its performance. Shellsort works by sorting subsequences consisting of every $k$'th element using Insertion Sort, for given values of $k$\footnote{
+The original Shellsort uses $n/2, n/4, n/8 \dots 1$, but many different sequences of $k$ can be used.
+}.  As a sorting network, we can replace the internal Insertion Sort with Bubble Sort to construct an $\Theta(n^2)$ data-oblivious sorting algorithm, though doing so is thoroughly unimpressive, as the final step consists of simply running Bubble Sort on the entire input.
+
+There are however data-oblivious variants of Shellsort that perform well, both in theory and practice, and no study of data-oblivious algorithms would be complete without including at least a few of them.
+
+\subsection{Pratt's Shellsort}
+
+Pratt's PhD thesis~\citeA{PrattThesis} not only shows that the most common variants of Shellsort must use $\Omega(n^{3/2})$ comparisons in the worst case, but also manages to produce a special sequence for Shellsort most commonly known as the Pratt Sequence.
+
+The Pratt sequence for Shellsort consists of all the numbers on the form $2^i3^j < n$, in a specially constructed order. This sequence has length $\Theta(\log^2n)$, which in itself is long for a Shellsort sequence, but has a desirable property of bounding the complexity of the internal subsequence sorting to a linear amount of comparisons, which can be used to produce an $\Theta(n \log^2 n)$ data-oblivious algorithm.
+
+When adapting the Pratt sequence and the reduced inner sort directly, we can construct a simple algorithm that constructs the sequence, and performs the necessary comparisons at the same time, as described in the pseudo-code of Algorithm~\ref{alg:Pratt}.
+
+\begin{algorithm}
+\caption{Pratt's Shellsort}\label{alg:Pratt}
+\begin{algorithmic}[1]
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $n$: Size of $A$
+\Procedure{PrattSort}{$A, n$}
+\For {$i = n/2, n/4, n/8 \dots 1$}
+	\State{$j \gets i$}
+	\Do
+		\For {$k = 0 \dots n-j-1$}
+			\State {$\mathtt{Compare-Exchange}(A,k,k+j)$}
+		\EndFor
+		\State {$ j \gets 3j/2$}
+	\doWhile {$j \% 3 == 0\ \text{and}\ j < n$}
+\EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Shaker Sort}
+
+Shaker Sort\footnote{
+A certain Bubble Sort variant also goes by the name of (Cocktail) Shaker Short. Any reference to Shaker Sort in this thesis is to the Shellsort variant of~\citeA{ShakerSort}.
+}, as described in~\citeA{ShakerSort} is another interesting variation of Shellsort. Shaker Sort replaces the subsequence sorting with a single upwards and downwards \texttt{Compare-Exchange} scan, called a Shaker Pass. There appears to be little analytical work done in determining the failure rate of Shaker Sort, but it is known that certain sequences of length $\Theta(\log n)$ seem effective at sorting random data.
+
+The algorithm can be described as seen in Algorithm~\ref{alg:ShakerSort}.
+
+
+It should be noted, that~\citeA{BadShaker} shows that certain input sequences will make Shaker Sort fail unless the amount of 1-shakes is linear in the size of the input. These sequences do not appear to be stable under shuffling, which could solve this problem, and it is also noted that for sorting random input, Shaker Sort still seems to have a negligible failure rate.
+
+\begin{algorithm}
+\caption{Shaker Sort}\label{alg:ShakerSort}
+\begin{algorithmic}[1]
+	\Statex $A$: Array input of \texttt{Compare-Exchange} compatible elements
+	\Statex $n$: Size of $A$
+\Procedure{ShakerSort}{$A, n$}
+\State {$\mathtt{Shuffle}(A)$} 
+\Comment{Shuffle is optional, but advised for general inputs.}
+\State {$seq \gets \mathtt{ShakerSequence}(n)$}
+\ForAll {$s\ \mathbf{in}\ seq$}
+	\For {$i = 0 \dots n-s-1$}
+		\State {$\mathtt{Compare-Exchange}(A,i, i+s)$}
+	\EndFor
+	\For {$i = n-1 \dots s$}
+		\State {$\mathtt{Compare-Exchange}(A,i-s, i)$}
+	\EndFor
+\EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+
+

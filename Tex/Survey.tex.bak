@@ -1,0 +1,40 @@
+\FloatBarrier
+\section{Survey of Additional Algorithms}
+
+Despite the great number of algorithms presented in the previous sections of this chapter, there are still many data-oblivious sorting algorithms that have not yet been described.
+The reason these algorithms have been omitted until now, is their exclusion from the already crowded experiments and implementation chapters.
+In short, there are already too many algorithms to keep track of, and some algorithms simply aren't suited for the real world.
+
+Many of these algorithms are still interesting from a theoretical point of view, but often fail to present a proper case for real-world usage.
+Since these algorithms are still interesting for a general understanding of the field of sorting networks, this section will provide a short survey on the work that has been done in their design and analysis.
+
+\subsection{The AKS sorting network}
+
+The AKS sorting network of~\citeA{AKS} is perhaps one of the most famous sorting networks ever presented. 
+This network remarks itself by being the first sorting network that is asymptotically optimal in the amount of comparisons and depth, but also has reputation for having enormous constant factors and being horrendously difficult to implement.
+
+The basic construction of the AKS sorting network relies on partitioning the input into halves, quarters, eights and so forth, arranging these partitions as a binary tree, and applying a constant-depth network called an \textepsilon -nearsorter on the triplets formed by a node and its children. This is done for even and odd nodes one after another, a logarithmic number of times, giving the logarithmic depth to the network. As these operations proceed, the indices that any node is responsible for filter down through the tree, until finally all elements have arrived at 1-element leaf. A much more thorough description is given by~\citeA{AKS}, but little time is devoted to the practicalities of any actual construction of the network, as the authors wish to focus primarily on theory.
+
+As the interest in optimal sorting networks continues, we see refinements of the AKS sorting network emerge. One of the most well-known of these is the sorting network of~\citeB{Paterson}, known of just as the Paterson sorting network. The Paterson sorting network follows many of the same ideas as the AKS sorting network, but replaces the \textepsilon -nearsorters with \textepsilon -separators, a structure that requires fewer comparisons by focusing more explicitly on moving extreme elements to the ends of the input. The new structure also simplifies the description of the destination for wires throughout the network, bringing it closer to an implementable construction. Given the more rigorous description of the network,~\citeB{Paterson} manages to calculate the amount of comparison performed, and place the depth of the network at about $6100 \log n$.
+
+A variation of the Paterson sorting network is further explored in~\citeB{SNSimplified}, leading to a simple description of the network using a slightly less precise description of separators. Unfortunately the paper does not go into detail in attempting to keep the constant factors of the network small, and the constant factors of the depth of the network does not seem to be as firmly defined as those of the Paterson network..
+
+Further improvements of the AKS sorting network are presented in~\citeB{AKSLectureNotes}, where the tree structure of the AKS sorting network is expanded to support a much larger branching factor, and useful multi-way separators are constructed from smaller sorting networks of fixed size. 
+This result puts the depth of the network at $1830 \log n - 58657$, requiring $n \geq 2^{78}$. This depth is impressive in the world of optimal sorting networks, but unfortunately still not competitive with simpler networks for any reasonable $n$.
+
+The networks based on AKS are all fairly similar, and have few competitors. There is however at least one other sorting network providing optimal size, though not depth. This new network, called Zig-zag Sort is presented in~\citeA{ZigZag}, and shows a new approach to optimal sorting networks, as it focuses more on size and simplicity than depth. Accepting a deep network with fewer comparisons allows for a network that is easy to construct, and has a much better constant factor in practice. A big part of the improvement in the amount of comparisons comes from using \textepsilon -halvers with a much lower precision than those of the previous networks, as the size and depth of such networks grows quickly as one requires higher precision.
+
+This concludes the observations made on the AKS sorting network and its variants, and we now move on to less efficient networks.
+
+\subsection{The $\Theta(n \log^2 n)$ Sorting Networks}
+
+Numerous ingenious sorting networks have been developed throughout research history, many of them achieving a $\Theta(n \log^2 n)$ bound on their number of comparisons, but due to a lack of space, only a few of them have been included in this thesis.
+While Bitonic Sort, Odd-Even Mergesort and Pratt's Shellsort are included in the experiment for their historical significance, practical performance and structural simplicity, they are far from the only networks to achieve some, or all, of these properties, and in this section a few other contenders will be discussed.
+
+The Pairwise sorting network, described in~\citeA{PairwiseSorting}, remarks itself by being exactly the same size and depth as the Odd-Even Mergesort network. This may not seem impressive at first, but at the time of publication, it was claimed to be the first network to achieve this size in 20 years. The network is fairly simple, and starts by partitioning the input into sorted pairs, lexicographically sorting these pairs by recursion, and then merging the pairs into sorted order. The description of the network relies heavily on the \emph{0-1 principle} of~\citeB{Knuth3}, but is otherwise exceptionally simple, and the resulting sorting network is easily constructed in practice.
+
+As mentioned, there has not been many successful attempts at constructing a deterministic sorting network having a lower complexity than Odd-Even Mergesort, while still being constructable in practice, though it is actually possible. An interesting generalisation of the Odd-Even Mergesort network is shown in~\citeA{DivideSortMerge}, which can reduce the number of comparisons performed by a $\Theta(n log n)$ amount, though this is rather m. What is most notable about the generalized network presented in~\citeA{DivideSortMerge} is the construction of merging networks for more than two input streams, leading to a multi-way merge sort, which distinguished the network from its competitors. 
+
+The Periodic Balanced Sorting Network of~\citeA{PeriodicSortingNetwork} utilizes a single block of $\Theta(\log n)$ depth to achieve sorting in $\Theta(\log^2 n)$ time by $\log n$ applications of the aforementioned block. Using this construction they create a sorting network that, if constructed by exact duplicates of the same block, has a higher constant factor than competing networks. By skipping certain phases of the basic building block of the network the size of the network is brought close to that of Bitonic Sort. The repeatable nature of Periodic Sort is what makes it interesting, since it allows for an efficient hardware implementation, where data is repeatedly cycled through a single hardware component, and additionally allows for faulty comparators by increasing the amount of cycles.
+
+Finally, if the base element of the sorting network is not the standard network comparators, but instead small $k$-sorters,~\citeA{kSorters} shows how to construct an $\Theta(n \log^2 n)$ sorting network. The algorithm presented in the paper is a slight variation of Columnsort from~\citeB{ColumnSort} to recursively construct merging network from k-sorters, which is utilizing in sorting the entirety of the input data.

@@ -1,0 +1,25 @@
+\chapter{Conclusion}
+\label{ch:conclusion}
+
+\section{General Conclusions}
+
+In this thesis we have shown that data-oblivious sorting algorithms, despite often being confined either hardware or theory, can easily be implemented in software while still maintaining both their data-oblivious properties and having running times that are entirely reasonable.
+
+We also find that several new developments in hardware greatly benefit the performance of data-oblivious sorting networks, as they often contain high levels of parallelism. Especially impressive is the performance of classic sorting networks when properly modified to fully utilize the GPU, where they can achieve running times beneath that of the highly optimized sorting algorithm provided by the \texttt{C++} standard library.
+
+Two common problems for data-oblivious sorting algorithms appear to be cache misses and sub-optimal asymptotical instruction counts. Most likely we will see these algorithms improve, as hardware developments focuses on larger caches as opposed to clock frequency, the problem of cache misses might be diminished, while the algorithms showing sub-optimal instruction counts can be migrated to the GPU, where large improvements in pure processing power is still occurring.
+
+Preliminary results for automatic vectorization techniques show promising results in reducing the amount of operations required to execute sorting data-oblivious sorting algorithms, though modern compilers are still not up to the task of recognising sorting networks in order to apply the required transformations.
+
+In short, the work of this thesis should show that data-oblivious sorting networks, while they might have some problems when implemented in a straight-forward sequential manner, are still entirely relevant due to modern hardware developments.
+
+\section{Further Work}
+
+Due to the broad coverage of algorithms and optimization techniques covered in this thesis, there are a significant number of subjects left open for further research.
+
+The automatic vectorization and reordering techniques of Chapter~\ref{ch:SIMDerize} could be implemented as a compiler module or an extension to an existing language runtime in order to test the actual effectiveness. This would allow for comparisons with already existing techniques, and enable collection of data both on the performance and detection rate of automatic vectorization.
+
+Several additional algorithms could be included in the experiments, including the Pariwise Sorting network of~\citeA{PeriodicSortingNetwork} and the Pairwise Sorting network~\citeA{PairwiseSorting} are both easy to implement on modern hardware and might prove to be efficient in practice. The reduced number of comparisons achieved in~\citeA{DivideSortMerge} might prove to have a beneficial effect on performance and experimenting with a greater amount of merging sequences could give interesting results.
+
+The optimization techniques presented in Chapter~\ref{ch:Implementations} are implemented and tested separately, but it might be beneficial to combine some of these techniques. When subproblems become too small for efficient CUDA execution, switching to SIMD or OpenMP is a definite possibility. Additionally, many of the OpenMP-optimized algorithms still allow for SIMD operations to be used.
+

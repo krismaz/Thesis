@@ -1,0 +1,34 @@
+\subsection{Motivations for Using Data-Oblivious Algorithms}
+
+Despite their complications, data-oblivious algorithms have several interesting properties that make them an interesting field of work, and the current development into distributed systems is especially driving a new wave of research in this field.
+
+The main motivations are as follows.
+
+\subsubsection{Integrated circuits}
+
+Since any deterministic data-oblivious algorithm can be modelled as a network, using the atomic operation as a network component. If the atomic operation is sufficiently simple, this allows for construction of an electrical circuit that performs the operations of the algorithm.
+This implies that for any such algorithm, an integrated component can be developed that, for a fixed input size, will compute the exact same output as the original algorithm. The constantly increasing demand for smart devices combined with the decreasing cost of electronics make data-oblivious algorithms obvious targets for usage in such components.
+This was a large part of the motivation for early research into sorting networks, as exemplified in~\citeA{SNApplications} and~\citeA{PrattThesis}. 
+
+\subsubsection{Secure multi-party computations}
+
+When developing systems based on the cooperation of several parties that may not wish to disclose the content of their data, oblivious operations become important. Secure multi-party computations often rely on modelling circuits for any operation that is dependent on input data, which means that reducing the size of the input-dependent components is critical.
+Luckily, secure multi-party computations schemes already contain good solutions for generating shared random numbers, which makes randomized data-oblivious algorithms a suitable target for such calculations.
+In the literature we find this usage in papers such as~~\citeB{ObliviousSet} and~\citeB{GraphGeoOblivious}.
+
+
+\subsubsection{Outsourced private data}
+
+When storing private information in an outsourced database, one might wish to hide the content stored from curious observers. Fortunately there exist excellent protocols for encrypting such data, but if the algorithms operating on the data changes its data access patterns based on the content of the data, an observer might infer information about what we are trying to hide. Since the sequence of operations of data-oblivious algorithms is only dependent on the input size, we leak no information when performing important computations.
+This use of data-oblivious algorithms forms the basis for~\citeB{ObliviousExternal} and~\citeB{ObliviousGraph}.
+
+
+\subsubsection{Parallel computing}
+
+In some cases, data-oblivious algorithms can be reduced to a circuit network of low depth. Such networks make great targets for parallel computing. The area of parallel computing is in rapid growth due to the difficulty in constructing faster processors, while the amount of cores in most machines grow, and oblivious algorithms make interesting targets for parallel computation. This however requires special considerations in the algorithmic design, in order to maintain low depth to keep synchronization costs at a minimum.
+Research into the applications of parallel execution of data-oblivious are often focused on GPU-assisted sorting algorithms, such as those presented in~\citeA{FastGPU} and~\citeA{OddEvenOpenCL}.  
+
+\subsubsection{Operations on external data}
+
+Systems in which latency for data access is high can benefit heavily from data-oblivious algorithms, as such algorithms can perform their entire workload as a series of atomic operations. These operations can be computed based on the size of the data, and shipped to the external controller, who will then be able to perform these operations. This removes any need for waiting for external latency, while still allowing for a great number of algorithms to be applied. It is especially of note, that while the external party will need to perform a great amount of operations, they will each be of low complexity.
+Examples of this usage are hard to find, as most research, such as~\citeB{ObliviousExternal} and~\citeB{ObliviousGraph}, focuses on preventing information leakage through analysis of data access patterns. It can be argued that sorting networks, and integrated circuits would also be applicable to this use case. 

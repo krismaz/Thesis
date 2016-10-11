@@ -1,0 +1,25 @@
+\boolfalse {citerequest}\boolfalse {citetracker}\boolfalse {pagetracker}\boolfalse {backtracker}\relax 
+\defcounter {refsection}{0}\relax 
+\beamer@endinputifotherversion {3.33pt}
+\defcounter {refsection}{0}\relax 
+\select@language {danish}
+\defcounter {refsection}{0}\relax 
+\beamer@sectionintoc {1}{Introduktion}{3}{0}{1}
+\defcounter {refsection}{0}\relax 
+\beamer@sectionintoc {2}{Algoritmer}{8}{0}{2}
+\defcounter {refsection}{0}\relax 
+\beamer@subsectionintoc {2}{1}{Randomized Shellsort}{9}{0}{2}
+\defcounter {refsection}{0}\relax 
+\beamer@subsectionintoc {2}{2}{Annealing Sort}{11}{0}{2}
+\defcounter {refsection}{0}\relax 
+\beamer@subsectionintoc {2}{3}{Bitonic Sort}{13}{0}{2}
+\defcounter {refsection}{0}\relax 
+\beamer@subsectionintoc {2}{4}{Odd-Even Mergesort}{15}{0}{2}
+\defcounter {refsection}{0}\relax 
+\beamer@subsectionintoc {2}{5}{Shellsort Varianter}{17}{0}{2}
+\defcounter {refsection}{0}\relax 
+\beamer@sectionintoc {3}{$O(n \qopname \relax o{log}n)$ netv\IeC {\ae }rk}{19}{0}{3}
+\defcounter {refsection}{0}\relax 
+\beamer@sectionintoc {4}{Eksperimenter}{26}{0}{4}
+\defcounter {refsection}{0}\relax 
+\beamer@sectionintoc {5}{Konklusioner}{39}{0}{5}

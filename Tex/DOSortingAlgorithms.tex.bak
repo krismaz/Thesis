@@ -1,0 +1,20 @@
+\chapter{Data-Oblivious Sorting Algorithms}
+\label{ch:algorithms}
+
+Throughout this thesis, several data-oblivious sorting algorithms will be discussed, and their properties relating to efficiency and optimization techniques will be studied. Before we can continue on to this work, we must however ensure that we have established the structure of these algorithms, and most of this chapter will devote itself to brief descriptions of the individual algorithms that form the basis of any further work being done.
+
+Let us begin by immediately describing these algorithms. 
+
+\input{RandomizedShellsort}
+
+\input{AnnealingSort}
+
+\input{BitonicSort}
+
+\input{OddEvenMergeSort}
+
+\input{PrattShellsort}
+
+\input{AlgortithmOverview}
+
+\input{Survey}

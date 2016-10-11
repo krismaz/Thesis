@@ -1,0 +1,44 @@
+\FloatBarrier
+\section{The Recursive Sorting Network Layout For Modern hardware}
+\label{sec:BitonicCache}
+
+When working with modern hardware, it is often the case that memory latency plays a large part in determining the running time, which should be taken into consideration when designing algorithms. This is especially important when attempting to adapt older algorithms to the multi-layered memory-hierarchies of modern computers.
+
+Let us briefly discuss why this idea of multi-layered memory helps justify the recursive layout of Bitonic Sort from Section~\ref{BitonicSort}, as opposed to the layer-wise execution scheme of Algorithm~\ref{alg:ParallelBitonic}.
+
+The model we will be looking at consists of a main memory of infinite size holding the input data, a cache memory of size $M$, partitioned into cache lines of size $B$, and we will be giving estimates for the amount of times main memory must be accessed for both the layer-wise and the recursive execution scheme. For a deeper explanation of the subject, see~\citeB{CacheOblivious}.
+
+When using the layer-wise execution order, the algorithm will need to touch each element once each layer. Touching each element requires $\Theta(^n/_B)$ main memory accesses, and since the algorithm has $\Theta(n \log^2 n)$ depth this will incur $\Theta(^n/_B\log^2 n)$ cache misses. Even a strategy that kept elements in memory between layers would use $\Theta(\frac{n-M}{B}\log^2 n)$, a minor saving when $n >> M$.
+
+If we instead use a recursive layout, we get an amount of cache loads $C$ per execution of:
+
+\[
+C_{MERGE}(n)=
+\begin{cases}
+\hiderowcolors
+n/B & n<M \\
+n/B + 2*C_{MERGE}(n/2) & \text{else}
+\end{cases}
+\]
+\[
+C_{SORT}(n)=
+\begin{cases}
+\hiderowcolors
+n/B & n<M \\
+C_{MERGE}(n) + 2*C_{SORT}(n/2) & \text{else}
+\end{cases}
+\]
+
+for Bitonic Merge and Bitonic Sort respectively. Following this recursion puts $C_{SORT} = \Theta(\frac{n}{B}\log^2 \frac{n}{M})$, which is a much more favourable number and takes greater advantage of increases in cache memory size.
+
+Odd-Even Mergesort favours a similar strategy for many of the same reasons, but numbers are not as simple as for Bitonic Sort, as we can no longer rely on layers being completely filled with elements, and the fact that elements have to be reordered before initiating the recursive call.
+
+\subsection{Merging Multiple Recursive Calls for Cache Efficiency}
+
+The benefits of a recursive layout for Bitonic Sort and Odd-Even Mergesort are clear, and are explored experimentally in Section~\ref{sec:OEMergesortExperiment}. 
+
+We can further improve cache efficiency by merging layers of recursive calls into a single pass though the input. This does not affect the amount of cache misses asymptotically, but it improves performance in experiments on modern hardware.
+
+A problem with this approach is to avoid breaking of \texttt{Compare-Exchange} ordering for each individual input index. For Bitonic Sort, this proves problematic, as each index is dependent on indices that are far apart, and this makes the strategy not feasible for Bitonic Sort. For Odd-Even Mergesort, the distance between dependent indices is small, and due to element reordering to avoid rapid growth of cache misses, the amount of cache misses normally made by each layer is high, making this a favourable strategy for Odd-Even Mergesort.
+
+In Section~\ref{sec:OEMergesortExperiment} we experimentally verify the reduction in cache misses when performing two layers of recursion instead of one, between each re-ordering of data for Odd-Even Mergesort.

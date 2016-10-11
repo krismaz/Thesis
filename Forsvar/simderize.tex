@@ -1,0 +1,148 @@
+\section{Automatic Vectorization}
+
+\begin{frame}{Automatic Vectorization}
+	\begin{itemize}
+		\item SIMD, på compile-time
+		\item Kæmpe arbejde at pille med en compiler
+		\item Simulering, log sammenligninger: \texttt{CE(0,8), CE(1,9) \dots}
+		\item Alignment
+			\begin{itemize}
+				\item Aligned
+				\item Unaligned
+				\item Individuelle loads
+			\end{itemize}
+		\item Varierende vide af registre
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Shaker Sort Vectorized}
+	\begin{columns}
+		\begin{column}{0.48\textwidth}
+			\begin{block}{basis}
+			\tiny
+				\begin{verbatim}
+0: CE(0,25)
+1: CE(1,26)
+2: CE(2,27)
+3: CE(3,28)
+4: CE(4,29)
+5: CE(5,30)
+6: CE(6,31)
+7: CE(6,31)
+8: CE(5,30)
+9: CE(4,29)
+10: CE(3,28)
+11: CE(2,27)
+12: CE(1,26)
+13: CE(0,25)
+14: CE(0,15)
+15: CE(1,16)
+16: CE(2,17)
+17: CE(3,18)
+18: CE(4,19)
+19: CE(5,20)
+20: CE(6,21)
+21: CE(7,22)
+...
+				\end{verbatim}
+			\end{block}		
+		\end{column}
+		\begin{column}{0.48\textwidth}
+			\begin{block}{vectorized}
+			\tiny
+				\begin{verbatim}
+0: CE4U(0, 25)
+1: CE(4, 29)
+2: CE(5, 30)
+3: CE(6, 31)
+4: CE4U(3, 28)
+5: CE(2, 27)
+6: CE(1, 26)
+7: CE(0, 25)
+8: CE4U(0, 15)
+9: CE4U(4, 19)
+...
+				\end{verbatim}
+				\vspace{2.5cm}
+			\end{block}
+		\end{column}
+	\end{columns}
+\end{frame}
+
+\begin{frame}{Resultater}
+	\begin{itemize}
+		\item Klar reduktion i operationer for mange algoritmer
+	\end{itemize}
+	\scriptsize
+	\begin{tabular}{|l c c c c|}
+\showrowcolors
+\hline
+Algorithm & Scalar & Aligned & Unaligned & Shuffled \\
+\hline
+Randomized Shellsort & 215048 & 213758 & 213617 & 72182\\
+
+Recursive Odd-Even MergeSort & 139263 & 139263 & 139263 & 57954\\
+
+Layered Odd-Even Mergesort & 139263 & 67074 & 67074 & 34818\\
+
+Recursive Bitonic Sort & 159744 & 75264 & 75264 & 56835\\
+
+Layered Bitonic Sort & 159744 & 75264 & 75264 & 39936\\
+
+Pratt's Shellsort & 183634 & 87889 & 55138 & 55114\\
+
+Shaker Sort & 125348 & 121730 & 55934 & 55934\\
+
+Annealing Sort & 524160 & 524160 & 524160 & 524160\\
+\hline
+\end{tabular}
+\end{frame}
+
+\begin{frame}{Layering}
+	\begin{itemize}
+		\item Rækkefølgen af sammenligner er kun relevant indefor samme index
+		\item Læg sammenligniner så tidligt som muligt, reducer dybden af netværket.
+	\end{itemize}
+	\small
+	\begin{algorithmic}
+		\Procedure{LayerOrdering}{$ops, n$}
+			\State {$Depths \gets [-1, -1,...,-1] \text{ of lenght } n$}
+			\State {$Ordering \gets []$}
+			\For {$(i, j)\ \mathbf{in}\ ops$}	
+				\State{$depth \gets \max(Depths[i], Depths[j])+1$}
+				\State{$Depths[i], Depths[j] \gets depth, depth$}
+				\State{$Ordering\ {+}{=}\ [(depth, i, j)]$}
+			\EndFor
+			\State{$\mathtt{Sort}(Ordering)$}
+			\State{$\mathbf{return} [(i,j)\ \mathbf{for}\ (depth, i, j)\ \mathbf{in}\ Ordering]$}
+		\EndProcedure
+	\end{algorithmic}
+\end{frame}
+
+\begin{frame}{Layering Resultater}
+	\begin{itemize}
+		\item Klar ændring
+	\end{itemize}
+	\scriptsize
+	\begin{tabular}{|l c c c c|}
+\hline
+Algorithm & Sequential & Aligned & Unaligned & Shuffled \\
+\hline
+Randomized Shellsort & 215048 & 213773 & 213560 & 64520\\
+
+Recursive Odd-Even Mergesort & 139263 & 71676 & 70143 & 34818\\
+
+Layered OddEven Mergesort & 139263 & 67074 & 67074 & 34818\\
+
+Recursive Bitonic Sort & 159744 & 75264 & 75264 & 39936\\
+
+Layered Bitonic Sort & 159744 & 75264 & 75264 & 39936\\
+
+Pratt' Shellsort & 183634 & 92467 & 55312 & 48217\\
+
+Shaker Sort & 125348 & 121730 & 71222 & 55916\\
+
+Annealing Sort & 524160 & 524160 & 524154 & 197529\\
+\hline
+\end{tabular}
+\end{frame}

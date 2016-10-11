@@ -1,0 +1,71 @@
+
+\section{Implementation and Optimization}
+
+\begin{frame}{Praktiske Problemer}
+	\begin{itemize}
+		\item Randomized Shellsort og Annealing Sort
+			\begin{itemize}
+				\item PRNG
+				\item Konstanter
+			\end{itemize}
+		\item Bitonic Sort og Odd-Even Mergesort
+			\begin{itemize}
+				\item Templates
+				\item Odd-Even buffering
+				\item Rekursivt layout
+				\item Dobbelt-lag
+			\end{itemize}
+		\item Pratts Shellsort og Shaker Sort
+			\begin{itemize}
+				\item Inline sekvenser mod precomputing
+			\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{SIMD}
+	\begin{itemize}
+		\item SSE4.1 - 128 bit, 4x32 bit
+			\begin{itemize}
+				\item Registre
+				\item \texttt{PMINSD / PMAXSD}
+			\end{itemize}
+		\item Data Alignment
+			\begin{itemize}
+				\item 16-byte aligned
+				\item 16-byte unaligned
+				\item Individuelle loads
+			\end{itemize}
+		\item Brugbart? Ja
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{CUDA}
+	\begin{itemize}
+		\item \textbf{C}ompute \textbf{U}nified \textbf{D}evice \textbf{A}rchitecture
+		\item Data-Obliviousness
+	\end{itemize}
+	\begin{block}{Individuel Tilpasning}
+		\begin{description}
+			\item[Randomized Shellsort] CPU -> Texture Shuffle
+			\item[Bitonic Sort] Wire Mapping, Shared memory
+			\item[Odd-Even Mergesort] Speciel Remapping
+			\item[Shellsort Varianter] 1 tråd per sub-sekvens
+		\end{description}
+	\end{block}
+\end{frame}
+
+\begin{frame}{OpenMP}
+	\begin{itemize}
+		\item OpenMP Basics
+		\item \texttt{\#pragma omp \dots}
+		\item Stort overhead
+	\end{itemize}
+	\begin{block}{Individuel Tilpasning}
+		\begin{description}
+			\item[Randomized Shellsort] 1 tråd shuffler, mange sammenligner
+			\item[Bitonic Sort] Tasks
+			\item[Odd-Even Mergesort] Tasks
+			\item[Shellsort Varianter] Manuel scheduling grundet cache
+		\end{description}
+	\end{block}
+\end{frame}

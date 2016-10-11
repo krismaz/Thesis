@@ -1,0 +1,18 @@
+\chapter{Implementing Data-Oblivious Sorting Algorithms}
+\label{ch:Implementations}
+
+Having given high-level descriptions of the major algorithms involved in this thesis, let us look at the practicalities of implementing such algorithms.
+
+Special consideration should be given to the optimization techniques used for general performance increases across several algorithms, though many of the algorithms have individual peculiarities that are important for efficient implementations.
+
+\input{AlgorithmImpementations}
+
+\input{SIMD}
+
+\input{CUDA}
+
+\input{OpenMP}
+
+\input{MiscImplementations}
+
+\input{BitonicCache}

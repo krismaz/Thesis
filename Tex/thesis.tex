@@ -1,0 +1,148 @@
+\documentclass[twoside,11pt,openright]{report}
+
+\usepackage[american]{babel}
+\usepackage{a4}
+\usepackage{latexsym}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{epsfig}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[labeled]{multibib}
+\usepackage{color}
+\usepackage{datetime}
+\usepackage{epstopdf} 
+\usepackage[hidelinks]{hyperref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tipa}
+\usepackage{subcaption}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage{verbatim}
+\usepackage{multicol}
+\usepackage{mathtools}
+\usepackage{moreverb}
+\usepackage{tablefootnote}
+\usepackage{placeins}
+\usepackage{chngpage}
+\usepackage{xfrac}
+\usepackage[toc,page]{appendix}
+\usepackage[utf8]{inputenc}
+\usepackage{xpatch}
+\usepackage[table]{xcolor}
+\usepackage[normalem]{ulem}
+
+\renewcommand*\ttdefault{txtt}
+\interfootnotelinepenalty=10000
+
+\def\fps@figure{tp}
+
+\definecolor{lightblue}{rgb}{0.9,0.9,1.0}
+\rowcolors{1}{white}{lightblue} % odd = white, even = lightblue
+
+\makeatletter
+\xpreto\tabular{\global\rownum=\z@}
+\makeatother
+
+\newcommand{\todo}[1]{{\color[rgb]{.5,0,0}\textbf{$\blacktriangleright$#1$\blacktriangleleft$}}}
+
+\newcites{A,B,C}{Primary Bibliography,Secondary Bibliography, ALL of the literature}
+
+\newtheorem{thm}{Theorem}
+
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+
+\algdef{SE}[WHILE]{DoWhile}{EndDoWhile}[0]{\algorithmicdo}%
+{\algorithmicend\ \algorithmicdo}%
+
+\algdef{SE}[DOWHILE]{Do}{doWhile}{\algorithmicdo}[1]{\algorithmicwhile #1}%
+
+\algdef{SxnE}[FUCK]{DoWhileCond}{}[1]{\algorithmicwhile\ #1}%
+{}%
+
+\renewcommand*{\thefootnote}{\fnsymbol{footnote}}
+
+% see http://imf.au.dk/system/latex/bog/
+
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagestyle{empty} 
+\pagenumbering{roman} 
+\vspace*{\fill}\noindent{\rule{\linewidth}{1mm}\\[4ex]
+{\Huge\sf On the Practicality of Data-Oblivious Sorting}\\[2ex]
+{\huge\sf Kris Vestergaard Ebbesen, 20094539}\\[2ex]
+\noindent\rule{\linewidth}{1mm}\\[4ex]
+\noindent{\Large\sf Master's Thesis, Computer Science\\[1ex] 
+\monthname\ \the\year  \\[1ex] Advisor: Gerth St\o lting Brodal\\[15ex]}\\[\fill]}
+%\epsfig{file=logo.eps}
+\clearpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagestyle{plain}
+\renewcommand{\algorithmicrequire}{\textbf{Parameters:}}
+
+\input{abstract}
+
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgments}
+
+\input{Acknowledgements}
+
+\vspace{2ex}
+\begin{flushright}
+  \emph{Kris Vestergaard Ebbesen,}\\
+  \emph{Aarhus, \today.}
+\end{flushright}
+
+\tableofcontents
+\pagenumbering{arabic}
+\setcounter{secnumdepth}{2}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Introduction}
+
+\input{DataOblivious}
+\label{ch:intro}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{DOSortingAlgorithms}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{Implementation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{Simderize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\input{Experiments}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{Conclusion}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{chapter}{Primary Bibliography}
+\bibliographystyleA{plain} 
+\bibliographyA{thesis}
+\addcontentsline{toc}{chapter}{Secondary Bibliography}
+\bibliographystyleB{plain} 
+\bibliographyB{thesis} % remove this if you don't need secondary literature
+
+\input{Appendices}
+
+\end{document}
+

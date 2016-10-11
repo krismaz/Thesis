@@ -1,0 +1,38 @@
+\FloatBarrier
+\section{OpenMP}
+\label{sec:OMP}
+
+Having seen some extensive schemes for utilizing the intrinsic parallelism of data-oblivious sorting networks, let us go back to one of the most basic concepts of parallel programming, multi-threading.
+Often multi-threading requires a great amount of tedious work being done keeping threads synchronized, and preventing data races, but as growth in processor capabilities has shifted away from higher clock frequencies and onto additional cores, the demand for high-level interfaces to multi-threading has increased.
+
+OpenMP is a high-level multiprocessing API that allows for easy access to multi-threading while keeping most of the underlying structures and synchronization mechanics out of sight. 
+This allows for ease of implementation, and data-oblivious sorting algorithms seem like a prime candidate for such a system. 
+The main ideas behind OpenMP are described briefly in~\citeA{OMPIntro}.
+
+One of the main draws of the OpenMP framework is the ability to distribute work across multiple threads without making major changes to existing code by annotating existing structures in the program with pragma commands. 
+These pragmas generally allow for two distinct strategies for multi-threading in the algorithms presented earlier, each with their own distinct area of use.
+The first method loop-level multi-threading, where for-loops can be split into sizeable chunks and distributed among thread, which is excellent for algorithm highly reliant on linear passes through the input.
+The second method is task-based multi-threading, in which separate parts of the algorithm can be executed in parallel, and synchronization can be handled by a task queue, which is useful when multiple recursive calls can be handled separately.
+
+For the purposes of the experiments and optimization techniques presented in this section and Section~\ref{sec:OMPExperiments}, we will focus on OpenMP version 3.1. This version is fairly recent, but is support by compilers for most modern system.
+\footnote{\texttt{g++} and \texttt{clang} both support OpenMP up to and including version 3.1. Microsoft's Visual Studio unfortunately only supports version 2.0 at the time of writing.}
+The full specifications are available at~\citeB{OpenMP}.
+
+In general, it may seem that multi-threading and OpenMP is not as specifically suited for data-oblivious algorithms as the other schemes for parallelism presented. It is however worth including, if nothing else, then for comparison.
+
+The performance implications of using OpenMP is experimentally explored in Section~\ref{sec:OMPExperiments}.
+
+Let us briefly discuss how OpenMP can be used for the individual algorithms.
+
+\paragraph{Randomized Shellsort:}
+
+Randomized Shellsort utilizes loop-based multi-threading in the region comparison operation when the size is sufficiently big, allowing for multi-threaded execution when generating matching indexes and performing comparisons, through the use of the OpenMP \texttt{for} construct from Section~2.5 of~\citeB{OpenMP}. A \texttt{static} scheduling policy proved to provide the best performance. Shuffling indexes are unfortunately restricted to a single thread, and are therefore marked \texttt{single}. 
+
+\paragraph{Bitonic Sort and Odd-Even Mergesort:}
+
+Bitonic Sort and Odd-Even Mergesort are structurally similar, and follow the same exact strategy for multi-threading. 
+Whenever the algorithms are merging two sequences of sufficient size, the recursive calls are queued as a OpenMP \texttt{task} structure, as described in Section~2.7 of~\citeB{OpenMP}. This allows for lightweight scheduling of tasks, that should fully utilize CPU resources.
+
+\paragraph{Shellsort Variants:}
+
+Both variants of Shellsort work on separate sub-sequences of the input, which can all be handled in parallel. Special care must be taken in distributing these sequences among threads, as to avoid low-level cache collisions when indices of the sub-sequences fall into the same cache line. A solution to this problem is to group sub-sequences into chunks that are as big as possible to reduce the number of sequences falling into the same cache line being split across CPU cores. Manually handling thread behaviour, as opposed to using the built-in loop structures of OpenMP is an undesirable property, but was found necessary to avoid L1 cache thrashing. The problem of low-level cache sharing is covered in great detail in~\citeA{OMPCache}. 

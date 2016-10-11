@@ -1,0 +1,95 @@
+\documentclass[table]{beamer}
+\usepackage[danish]{babel}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{color}
+\usepackage{algpseudocode}
+\usepackage[backend=bibtex]{biblatex}
+\usepackage{mathtools}
+
+\definecolor{lightblue}{rgb}{0.9,0.9,1.0}
+\rowcolors{1}{white}{lightblue} % odd = white, even = lightblue
+
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+\algdef{SE}[DOWHILE]{Do}{doWhile}{\algorithmicdo}[1]{\algorithmicwhile~#1}%
+
+\usetheme[language=danish, titlepagelogo=logo, color=blue, coding=utf8]{TorinoTh}
+\setrellabel{Specialevejleder}
+\setcandidatelabel{Kandidatstuderende}
+\setsubject{Speciale}
+\mode<presentation>
+{
+  \usetheme{TorinoTh}
+}
+
+
+
+\title{On the Practicality of Data-Oblivious Sorting}
+
+
+\author{Kris Vestergaard Ebbesen}
+
+
+\date{13/4 - 2015}
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+\newcommand{\mycite}[1]{\nocite{#1} \citeauthor{#1}, \citeyear{#1}, \alert{\citetitle{#1}}}
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+\AtBeginSubsection[]
+{
+  \begin{frame}<beamer>{Outline}
+    \tableofcontents[currentsection,currentsubsection]
+  \end{frame}
+}
+
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>{Outline}
+    \tableofcontents[currentsection,currentsubsection]
+  \end{frame}
+}
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command: 
+
+%\beamerdefaultoverlayspecification{<+->}
+
+\addbibresource{thesis.bib}
+\begin{document}
+
+
+
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+  % You might wish to add the option [pausesections]
+\end{frame}
+
+
+\input{intro}
+
+\input{algorithms}
+
+%\input{implementation}
+
+\input{zigzag}
+
+\input{experiments}
+
+\input{conclusion}
+
+%\input{simderize}
+
+\end{document}

@@ -1,0 +1,128 @@
+\FloatBarrier
+\section{Random Numbers}
+\label{sec:PRNG}
+
+Randomized data-oblivious sorting algorithms require a great amount of random numbers, which can turn out to be a major factor in their running time if care is not taken to make generation of random numbers as quick as possible.
+
+Both Randomized Shellsort and Annealing Sort require $\Theta(n \log n)$ random numbers to be generated, and if \texttt{std::rand} is used to generate these numbers, calls to \texttt{std::rand} can take up most of the time used by the algorithm. Instead of \texttt{std::rand}, the algorithms implemented for this thesis use the Linear Congruent Genenerator PRNG presented in~\citeB{fastrand}, specifically the non-SSE version, as SSE turned out to be slightly slower.
+
+\texttt{std::rand} often delivers only 16 bits of randomness, requiring two calls per index for larger data sizes. The implementation from~\citeB{fastrand} will also deliver only 16 bits of randomness by throwing away extra bits, but this step is easily removed. Newer versions of \texttt{C++} come with much better pseudo-random number generators, but these are still fairly slow, as can be seen by the quick experiment of Appendix~\ref{app:PRNG}.
+
+It should be noted that the cryptographic security of this pseudo-random number generator is not of great concern, as we care mostly about its performance.
+
+\FloatBarrier
+\section{Engineering a Branch-Free Compare-Exchange} 
+\label{sec:CompareExchangeImpl}
+
+One of the main advantages of data-oblivious sorting are the algorithms' complete independence off the result of comparisons. In order to fully exploit this fact, we need to engineer the \texttt{Compare-Exchange} operation carefully to avoid any branches. Doing so should greatly improve pipelining in modern CPUs, in addition to being closer in spirit to a sorting network.
+
+Table~\ref{tab:CEVariants} shows three variants of the \texttt{Compare-Exchange} operation, as they are written in \texttt{C++} and the assembly produced by the compiler.
+
+The first variant has a clearly visible branch, both in the \texttt{C++} code and the resulting assembly, leading to a data-dependent comparisons, which should naturally be avoided.
+
+The second variant is much more subtle, as it discards branches in favour of conditional moves. Conditional moves are the \texttt{cmovle} and \texttt{cmovl} assembly instructions, which will store data only if certain register flags are set by previous comparison operations. These will actually not show up as branch mispredictions when profiling the algorithm, but their performance is somewhat unpredictable, since they can tie up the pipeline until the result of the comparison is known. Whether these instructions belong in a data-oblivious algorithms is also debatable.
+
+The final variant exploits the fact that the inputs are integers and the result of comparisons in \texttt{C++} is either 0 or 1, to create a mask that will \texttt{xor} the minimum and maximum values from the input. This clever little trick is shown at~\citeB{BitwiseMinMax}, and produces assembly code without branches, and where the memory operations performed are completely independent on the result of the comparison.
+
+The performance of the different variants depend on the application and underlying architecture, but to be safe we have chosen the third variant for all implementations used in the tests, since this variant is completely free of branches, and not dependent on the performance of conditional moves. In order to show how much the amount of branches per comparisons can change from algorithm to algorithm, a test was devised, the results of which can be found in Section~\ref{sec:CEBranchExperiment}.
+
+
+
+\begin{table}
+\begin{tabular}{|l|l|}
+\hiderowcolors
+\hline
+\multicolumn{1}{|c|}{C++ code} & \multicolumn{1}{c|}{GAS Assembly}\\ \hline
+\begin{minipage}{3in}
+\begin{verbatimtab}[2]
+
+void CompareExchange(int& A, int& B){
+	if(B<A){
+		std::swap(A,B);
+	}
+}
+
+\end{verbatimtab}
+\end{minipage} &
+\begin{minipage}{3in}
+\vspace{0.2in}
+\begin{verbatimtab}[2]
+
+ 	movl	(%rsi), %edx
+	movl	(%rdi), %eax
+	cmpl	%eax, %edx
+	jge	.L1
+	movl	%edx, (%rdi)
+	movl	%eax, (%rsi)
+.L1:
+	ret
+	
+\end{verbatimtab}
+\end{minipage} \\ \hline
+
+\begin{minipage}{3in}
+\begin{verbatimtab}[2]
+
+void CompareExchange(int& A, int& B){
+	auto C = A;
+	A = std::min(A, B);
+	B = std::max(C, B);
+}
+
+\end{verbatimtab}
+\end{minipage} &
+\begin{minipage}{3in}
+\vspace{0.2in}
+\begin{verbatimtab}[2]
+
+	movl	(%rdi), %eax
+	cmpl	%eax, (%rsi)
+	movl	%eax, %edx
+	cmovle	(%rsi), %edx
+	movl	%edx, (%rdi)
+	movl	(%rsi), %edx
+	cmpl	%edx, %eax
+	cmovl	%edx, %eax
+	movl	%eax, (%rsi)
+	ret
+	
+\end{verbatimtab}
+\end{minipage} \\ \hline
+
+\begin{minipage}{3in}
+\begin{verbatimtab}[2]
+
+void CompareExchange(int& A, int& B){
+	auto mask = ((A ^ B) & -(A < B));
+	auto C = A;
+	A = B ^ mask;
+	B = C ^ mask;
+}
+
+\end{verbatimtab}
+\end{minipage} &
+\begin{minipage}{3in}
+\vspace{0.2in}
+\begin{verbatimtab}[2]
+
+	movl	(%rdi), %eax
+	xorl	%ecx, %ecx
+	movl	(%rsi), %edx
+	movl	%eax, %r8d
+	cmpl	%edx, %eax
+	setl	%cl
+	xorl	%edx, %r8d
+	negl	%ecx
+	andl	%r8d, %ecx
+	xorl	%ecx, %edx
+	xorl	%ecx, %eax
+	movl	%edx, (%rdi)
+	movl	%eax, (%rsi)
+	ret
+	
+\end{verbatimtab}
+\end{minipage} \\ \hline
+\end{tabular}
+\caption{Compare-Exchange variants}
+\label{tab:CEVariants}
+\end{table}

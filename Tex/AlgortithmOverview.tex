@@ -1,0 +1,28 @@
+\FloatBarrier
+\section{Algorithms Recap} 
+
+\begin{table}[!h]
+\begin{tabular}{|c c c c|}
+\hline
+Name & Running Time &  Failure Rate & Parallelism \\ \hline
+Randomized Shellsort & $\Theta(n \log n)$ & $1/n^b, b \geq 1$ & Some \\
+
+Annealing Sort & $\Theta(n \log n)$ & $1/n^b, b \geq 1$ & Minor \\
+
+Bitonic Sort & $\Theta(n \log^2 n)$ & 0 & Highest \\
+
+Odd-Even Mergesort & $\Theta(n \log^2 n)$ & 0 & High/Highest \\
+
+Pratt's Shellsort & $\Theta(n \log^2 n)$ & 0 & High \\
+
+Shaker Sort & $\Theta(n \log n)$ & ? \tablefootnote{Failure rate is dependent on input permutations, and mostly verified experimentally, but low in practice with random input data.} & High\\
+\hline
+\end{tabular}
+\caption{Overview of used algorithms}
+\label{AlgTable}
+\end{table}
+
+Due to the high number of algorithms present in this thesis, we provide a table listing the different algorithms used in the experiments, and their properties. 
+
+One thing that is painfully obvious from Table~\ref{AlgTable} is the lack of an $O(n \log n)$ algorithm with 0 failure rate. Such algorithms do exist, as explained in the introduction of this thesis, but are both impractical to implement, and have horrible constant factors involved in their running times.
+

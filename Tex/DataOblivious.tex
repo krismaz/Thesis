@@ -1,0 +1,34 @@
+\FloatBarrier
+\section{Data-Oblivious Algorithms}
+
+Data-oblivious algorithms belong to a certain class of algorithms whose method of operation is almost entirely independent of the input data. Such algorithms rely on suitably small atomic operations to modify the data, and in order to maintain independence from the input data, the results of these operations are not known by the algorithm.
+ 
+This restriction naturally makes the development of such algorithms somewhat complicated, and outside of certain examples, most of the field is fairly new. Despite their innate restrictions, this class of algorithms has seen interesting developments in recent years, especially in data-oblivious sorting, where new algorithms have recently been developed following a renewed interest in the field. Along with these developments in data-oblivious sorting, several algorithms that rely heavily on sorting have been adapted to work in a data-oblivious way, due to the high demand for data-oblivious algorithms for distributed secure computations.
+
+Data-oblivious algorithms generally fall into two distinct categories, those that are based on circuits, and those that are randomized.
+The circuit-based data-oblivious algorithms model their atomic oblivious operations as gates in a network of data-transporting wires, and achieve data-obliviousness from the fact that this network is fixed, and no change in the ordering of operations can occur based on the content of the input.
+Randomized data-oblivious rely on applying their atomic oblivious operations in a randomized manner that is completely independent of the input, and use this fact to achieve data-obviousness, but often cannot be guaranteed to succeed.
+
+It should be noted that the size of the atomic oblivious component can vary widely between applications. The components used in problems concerning  sorting will rarely be sufficient for graph algorithms, and vice versa. Choosing the right size of the data-dependent components depends highly on the context of their use. The atomic operations can vary from simple bitwise or arithmetic operations, to putting two elements in the correct order, and might even consist of sorting a chunk of the input.
+
+Unfortunately, few experiments have been done on the actual performance of these data-oblivious algorithms, which leaves them in a fairly sad state when it comes to implementation details. However, this thesis will provide real-world measurements to alleviate this issue.
+
+\input{DataObliviousMotivations}
+
+\input{DataObliviousSorting}
+
+\subsection{Other Data-Oblivous Algorithms}
+
+Most of the work done in the field of data-oblivious algorithms concerns itself with the sorting of numbers. This stems from the existence of sorting networks as an already established field, and the nature of sorting giving itself easily to the concept of data obliviousness. There are however other classes of data-oblivious algorithms, though they are scarce, and not always easily adaptable to modern hardware.
+
+In order to construct a probabilistic sorting network probabilistic data-oblivious algorithms for merging and selection are presented in~\citeB{ProbNetworks}. Data-oblivious merging is already made possible by~\citeA{SNApplications} in $\Theta(n \log n)$ time, and this running time is not asymptotically improved, but the paper shows that the problem of data-oblivious selection is faster than any known solution to data-oblivious sorting.
+
+Selection, along with compaction and sorting, is also explored in~\citeB{ObliviousExternal} using the external memory model, as a means to provide a solution for such problems, when one must perform privacy-preserving computations on externally located data. Note that for data-oblivious algorithms in the external memory model, any computations are allowed in internal memory, and only the accesses to external memory needs to be kept oblivious.
+
+A great number of set operations are shown to be computable in an oblivious and privacy-preserving manner in~\citeB{ObliviousSet}. These algorithms can become the fundamental building blocks for later algorithms, and are therefore of great significance to the field of data-oblivious algorithms.
+
+Several crucial graph algorithms, namely breath-first search, single-source shortest distance, maximum flow and minimum spanning tree, have efficient data-oblivious algorithms for dense graphs presented in~\citeB{ObliviousGraph}. These are especially interesting, as they venture far from the well-known area of sorting, and can be useful for doing multi-party network routing computations, where one might wish to keep the algorithm oblivious due to privacy concerns.
+
+A number of geometric problems, convex hull, quadtree construction, closest pair and all-nearest-neighbours have data-oblivious solutions presented in~\citeB{GraphGeoOblivious}. These serve as useful building blocks for applications that are privacy-preserving, distributed and location-aware. 
+
+Finally, it should be noted that the existence of the concept \emph{Oblivious RAM} is often mentioned in the data-oblivious literature. Oblivious RAM is an ingenious concept originating from~\citeB{ObliviousRam} that allows the execution of arbitrary algorithms in a manner that prevents an adversary from obtaining useful information about the input from the memory accesses of the algorithm. This is especially useful for privacy-preserving computations, but imposes a non-constant overhead on the complexity of the program, which means that the development of optimal data-oblivious algorithms is still relevant.
