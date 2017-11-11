@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
             } else if(algorithm == "AnnealingSortIns"){
                 totalComparisons += AnnealingSort(data, size, 0.0, 1.0, 1.0, 10);
                 totalComparisons += InsertionSort(data, size);
-            } else if(algorithm == "AnnealingSortIns"){
+            } else if(algorithm == "AnnealingSortVegas"){
                 do{
                 totalComparisons += AnnealingSort(data, size, 0.0, 1.0, 1.0, 10);
                 } while(!is_sorted(&data[0], &data[size], STDIntCompare));
