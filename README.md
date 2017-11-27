@@ -1,5 +1,5 @@
 # Thesis
-My masters thesis on algorithm engineering in the context of data-oblivious sorting.
+My master's thesis on algorithm engineering in the context of data-oblivious sorting.
 
 It covers a wide range of algorithms, some classic sorting networks, and some newer data-oblivious random sorters.
 
